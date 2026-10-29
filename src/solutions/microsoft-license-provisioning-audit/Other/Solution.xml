@@ -1,19 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ImportExportXml version="9.2.23061.194" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SolutionManifest>
-    <UniqueName>microsoft-license-provisioning-audit</UniqueName>
+    <UniqueName>MicrosoftLicenseProvisioningAudit</UniqueName>
     <LocalizedNames>
       <LocalizedName description="microsoft-license-provisioning-audit" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>1.1.1.0</Version>
+    <Version>1.1.2.0</Version>
     <Managed>0</Managed>
     <Publisher>
-      <UniqueName>Cr8d10a</UniqueName>
+      <UniqueName>MLPAPublisher</UniqueName>
       <LocalizedNames>
-        <LocalizedName description="CDS Default Publisher" languagecode="1033" />
+        <LocalizedName description="License Provisioning Audit" languagecode="1033" />
       </LocalizedNames>
-      <Descriptions />
+      <Descriptions>
+        <Description description="Custom publisher for the Microsoft License Provisioning Audit solution." languagecode="1033" />
+      </Descriptions>
       <EMailAddress xsi:nil="true"></EMailAddress>
       <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
       <CustomizationPrefix>cr3f6</CustomizationPrefix>

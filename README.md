@@ -90,8 +90,8 @@ Outputs:
 
 Use these files directly for import:
 
-- `solution-packages/microsoft-license-provisioning-audit_1_1_1_0_unmanaged.zip` (dev/customization)
-- `solution-packages/microsoft-license-provisioning-audit_1_1_1_0_managed.zip` (test/prod)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_2_0_unmanaged.zip` (dev/customization)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_2_0_managed.zip` (test/prod)
 
 ## Step-by-step: create the flows in Power Platform
 
@@ -109,7 +109,7 @@ Use these files directly for import:
 ### 2) Import the solution
 
 1. Go to **Power Apps -> Solutions -> Import solution**.
-2. Import `microsoft-license-provisioning-audit_1_1_1_0_unmanaged.zip` in development.
+2. Import `microsoft-license-provisioning-audit_1_1_2_0_unmanaged.zip` in development.
 3. During import, bind connection references to your environment connections.
 4. Set environment variable values:
    - `cr3f6_TenantID`
@@ -169,3 +169,5 @@ Use these files directly for import:
 - Sovereign cloud routing is supported through `GraphBaseUrl` and `AuthorityUrl` variables, but tenant validation is still required.
 - Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadcr3f6_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
 - Alternate keys are not used on `cr3f6_ProvisioningEvent`/`cr3f6_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
+- **Publisher**: the solution ships its own publisher, `License Provisioning Audit` (unique name `MLPAPublisher`), instead of relying on the target environment's auto-generated default publisher. It keeps the original `cr3f6` customization prefix so no entity/field/flow references needed renaming.
+- **Fixed import failure (v1.1.2.0)**: earlier versions used `microsoft-license-provisioning-audit` as the solution's internal `UniqueName`, which Dataverse rejects — unique names may only contain `[A-Z]`, `[a-z]`, `[0-9]`, `_` (no hyphens). The internal unique name is now `MicrosoftLicenseProvisioningAudit`; the display name shown in Power Apps is unchanged (`microsoft-license-provisioning-audit`).
