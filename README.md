@@ -12,6 +12,54 @@ The solution detects provisioning activity and keeps an auditable notification h
 4. Dataverse audit trail (`LicenseSnapshot`, `ProvisioningEvent`, `DetectionCheckpoint`)
 5. Least-privilege security roles (`License Audit Reader`, `License Audit Service`) packaged as real solution components
 
+## Flows and how they're linked
+
+There are **4 flows**. None of them call each other directly (no child-flow or HTTP-trigger links between them) — the 3 new flows are deliberately decoupled and only connect through shared Dataverse tables, which act as the single source of truth. This means each flow can be turned on, paused, or re-run independently without breaking the others.
+
+```mermaid
+flowchart LR
+    SKU["Graph: subscribedSkus"]
+    Audit["Graph: directoryAudits"]
+
+    F0["Get License Usage<br/>(legacy, unchanged, hourly-ish)"]
+    F1["Detect Tenant License Provisioning<br/>(hourly)"]
+    F2["Detect User License Assignments<br/>(every 15 min)"]
+    F3["Send Provisioning Notification<br/>(every 15 min)"]
+
+    LS[("LicenseSnapshot")]
+    DC[("DetectionCheckpoint")]
+    PE[("ProvisioningEvent")]
+
+    SKU --> F0
+    F0 -->|"> 80% consumption"| Teams1["Teams post"]
+
+    SKU --> F1
+    F1 -->|"read / upsert"| LS
+    F1 -->|"create Pending rows"| PE
+
+    Audit --> F2
+    F2 -->|"read / upsert watermark"| DC
+    F2 -->|"create Pending rows"| PE
+
+    PE -->|"read Pending / Failed"| F3
+    F3 -->|"update status"| PE
+    F3 --> Email["Digest email to DL"]
+    F3 -.optional.-> Teams2["Teams post"]
+```
+
+| Flow | Trigger | Reads | Writes | Linked to others via |
+|---|---|---|---|---|
+| **Get License Usage** (legacy) | Recurrence | Graph `subscribedSkus` | Teams post only (no Dataverse) | Nothing — fully independent, untouched by this project |
+| **Detect Tenant License Provisioning** | Recurrence, hourly | Graph `subscribedSkus`; `LicenseSnapshot` (previous values) | Upserts `LicenseSnapshot`; creates `ProvisioningEvent` rows (`Pending`) | Produces rows that **Send Provisioning Notification** later consumes |
+| **Detect User License Assignments** | Recurrence, every 15 min | `DetectionCheckpoint` (watermark); Graph `auditLogs/directoryAudits` | Upserts `DetectionCheckpoint`; creates `ProvisioningEvent` rows (`Pending`) | Produces rows that **Send Provisioning Notification** later consumes |
+| **Send Provisioning Notification** | Recurrence, every 15 min | `ProvisioningEvent` (`Pending` + `Failed` under retry limit) | Updates `ProvisioningEvent` status/recipient/timestamp/error/flow-run-URL fields | Consumes rows from **both** detector flows |
+
+Key points on the linkage:
+
+- **`ProvisioningEvent` is the only connection point** between the three new flows. The two detector flows never read each other's data (Tenant detector never touches `DetectionCheckpoint`; User detector never touches `LicenseSnapshot`) — they just both append rows to the same audit table.
+- **`Send Provisioning Notification` is a pure consumer** — it doesn't know or care which detector created a row, it just polls `ProvisioningEvent` by status.
+- This decoupling is intentional: it means a burst of provisioning events from either detector gets digested together by one notifier run, instead of each detector needing its own notification logic.
+
 ## ALM implementation in this repo
 
 ### 1) Source-first structure
@@ -170,11 +218,3 @@ Use these files directly for import:
 - Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadmlpa_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
 - Alternate keys are not used on `mlpa_ProvisioningEvent`/`mlpa_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
 - **Publisher**: the solution ships its own publisher, `License Provisioning Audit` (unique name `MLPAPublisher`), instead of relying on the target environment's auto-generated default publisher. It also uses its own customization prefix (`mlpa`, option value prefix `20541`) instead of reusing `cr3f6` from the environment's default publisher, so there is no risk of a "customization prefix already in use" conflict on import. Every component (tables, fields, choices, flows, roles, connection references, environment variables) was renamed to the `mlpa_` prefix.
-
-### Import fix history
-
-Each of these was found from an actual failed-import log and confirmed fixed by re-inspecting the packed zip (not just the source), since there is no live tenant available in this environment to test against directly:
-
-- **v1.1.2.0** — Solution `UniqueName` was `microsoft-license-provisioning-audit`, which Dataverse rejects: unique names may only contain `[A-Z]`, `[a-z]`, `[0-9]`, `_` (no hyphens). Changed to `MicrosoftLicenseProvisioningAudit`; the display name shown in Power Apps is unchanged.
-- **v1.1.3.0** — Solution shipped the environment's auto-generated default publisher (`Cr8d10a` / "CDS Default Publisher") and its `cr3f6` prefix, risking a "customization prefix already in use" conflict. Replaced with a dedicated publisher (`MLPAPublisher`) and prefix (`mlpa`) across every component.
-- **v1.1.4.0** — All three tables used `<OwnershipTypeMask>OrganizationOwned</OwnershipTypeMask>`, which Dataverse rejected with `Requested value 'OrganizationOwned' was not found` (the real enum member is `OrgOwned`, and in practice that value is only used by special Business-Process-Flow entities in real Microsoft solutions). Changed all three tables to `UserOwned` — the standard choice for custom tables — which is functionally equivalent here since both security roles already grant `Global` (organization-wide) privilege depth, so access isn't limited to record owners.
