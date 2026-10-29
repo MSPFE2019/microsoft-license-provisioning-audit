@@ -85,6 +85,81 @@ Outputs:
 - `out/microsoft-license-provisioning-audit_unmanaged.zip`
 - `out/microsoft-license-provisioning-audit_managed.zip`
 
+## Download-ready solution packages
+
+Use these files directly for import:
+
+- `solution-packages/microsoft-license-provisioning-audit_1_1_0_0_unmanaged.zip` (dev/customization)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_0_0_managed.zip` (test/prod)
+
+## Step-by-step: create the flows in Power Platform
+
+### 1) Prepare prerequisites
+
+1. In Entra ID, create/register an app for Microsoft Graph.
+2. Grant **Application permissions**: `Organization.Read.All` and `AuditLog.Read.All`; grant admin consent.
+3. Create a client secret for the app.
+4. In Power Platform, ensure Dataverse is enabled in your target environment.
+5. Create required connections:
+   - Dataverse
+   - Office 365 Outlook (service account/shared mailbox)
+   - HTTP with Entra ID (or equivalent Graph-authenticated HTTP connector)
+
+### 2) Import the solution
+
+1. Go to **Power Apps -> Solutions -> Import solution**.
+2. Import `microsoft-license-provisioning-audit_1_1_0_0_unmanaged.zip` in development.
+3. During import, bind connection references to your environment connections.
+4. Set environment variable values:
+   - `cr3f6_TenantID`
+   - `cr3f6_ClientID`
+   - `cr3f6_Secret`
+   - `cr3f6_NotificationDL`
+   - `cr3f6_PollOverlapMinutes` (default `30`)
+   - `cr3f6_MaxRetries` (default `3`)
+   - `cr3f6_EnableTeamsNotification` (`No` by default)
+   - `cr3f6_GraphBaseUrl` (`https://graph.microsoft.com`)
+   - `cr3f6_AuthorityUrl` (`https://login.microsoftonline.com`)
+   - `cr3f6_M365GroupID` (used by the legacy utilization flow)
+
+### 3) Verify Dataverse components
+
+1. Confirm tables exist:
+   - `cr3f6_LicenseSnapshot`
+   - `cr3f6_ProvisioningEvent`
+   - `cr3f6_DetectionCheckpoint`
+2. Confirm roles exist:
+   - `cr3f6_LicenseAuditReader`
+   - `cr3f6_LicenseAuditService`
+
+### 4) Enable flows in the right order
+
+1. Turn on **Detect Tenant License Provisioning** (hourly).
+2. Turn on **Detect User License Assignments** (every 15 minutes).
+3. Turn on **Send Provisioning Notification** (every 15 minutes).
+4. Keep **Get License Usage** enabled only if you still want the legacy 80% utilization alert.
+
+### 5) First-run behavior
+
+1. Tenant detector seeds the `LicenseSnapshot` baseline on first run (no notifications).
+2. User detector creates the initial checkpoint baseline on first run (no notifications).
+3. Subsequent runs create `ProvisioningEvent` rows with `Pending` status.
+
+### 6) Notification behavior
+
+1. Notifier groups pending events into one digest email to `NotificationDL`.
+2. On success, events are marked `Sent`.
+3. On failure, events are marked `Failed` and retried up to `MaxRetries`.
+4. Optional Teams notification is controlled by `EnableTeamsNotification`.
+
+### 7) Functional test procedure
+
+1. Add a small number of licenses to the tenant (or assign a test license to a user).
+2. Wait for detector schedules to run.
+3. Confirm new rows in `cr3f6_ProvisioningEvent`.
+4. Confirm digest email delivery to the distribution list.
+5. Confirm each event has updated notification fields (`NotificationStatus`, `NotificationSentOn`, `RetryCount`, `FlowRunUrl`).
+
 ## ALM best practices applied
 
 1. **Managed-to-upstream promotion**: deploy managed in test/prod.
