@@ -1,40 +1,109 @@
-# UC Davis License Provisioning Notification - Meeting Brief (2026-10-29)
+# Microsoft License Provisioning Audit (Power Platform Solution)
 
-## Customer ask
+## What this solution does
 
-UC Davis wants to explore a custom automated solution for license provisioning events that can:
+This Power Platform solution detects new Microsoft license provisioning activity, sends operational notifications, and stores a durable audit trail.
 
-1. Detect when new licenses are provisioned.
-2. Notify a designated distribution list.
-3. Include key provisioning details in the notification.
-4. Maintain an audit trail of provisioning and notification activity.
+It covers two provisioning signals:
 
-## Meeting context
+1. **Tenant-level provisioning**
+   - New SKU appears in tenant subscriptions.
+   - Enabled unit count increases for an existing SKU.
+2. **User-level provisioning**
+   - License assignments detected from Entra directory audit events (`Change user license`), including group-based assignment activity.
 
-- **Customer participant:** Peter Carroll (UC Davis)
-- **Organizer:** Chris DeLeon
-- **Also invited:** Rick Leos and Copilot support
-- **Meeting date:** 2026-10-29
+## How it works
 
-## Discovery focus for the call
+The design uses decoupled Power Automate flows, with Dataverse as the system of record.
 
-The primary design decision is the event source and detection strategy (event-driven vs polling) for reliable license provisioning capture.
+### Flow 1: Detect Tenant License Provisioning
 
-Key requirements to confirm:
+- Trigger: Recurrence (hourly by default).
+- Reads Graph `subscribedSkus`.
+- Compares current values to Dataverse `LicenseSnapshot`.
+- Writes `ProvisioningEvent` rows with `Pending` notification status for:
+  - `TenantSkuNew`
+  - `TenantSkuIncrease`
+- Updates or creates snapshot rows.
+- First run seeds baseline and does not notify.
 
-1. **License scope:** M365, Power Platform, Dynamics 365, Copilot, or all.
-2. **Provisioned definition:** tenant SKU increase/new SKU, user assignment, or both.
-3. **Notification latency target:** near real-time or scheduled polling cadence.
-4. **Required notification payload:** SKU, counts, user, initiator, timestamp, source id, etc.
-5. **Audit system of record:** Dataverse, SharePoint, Log Analytics, or another platform.
-6. **Notification channel(s):** email DL, Teams, ServiceNow, or ITSM integration.
+### Flow 2: Detect User License Assignments
 
-## Architecture direction
+- Trigger: Recurrence (every 15 minutes by default).
+- Reads checkpoint watermark from Dataverse `DetectionCheckpoint`.
+- Queries Graph `auditLogs/directoryAudits` for `Change user license`.
+- Uses overlap window + dedupe strategy to account for log latency.
+- Writes `ProvisioningEvent` rows with `Pending` status for `UserLicenseAssigned`.
+- Advances checkpoint after successful processing.
+- First run establishes checkpoint baseline.
 
-Once requirements are confirmed, validate whether **Power Automate + Microsoft Graph + Dataverse** satisfies:
+### Flow 3: Send Provisioning Notification
 
-- Detection fidelity (including overlap + dedupe for audit log latency),
-- Operational reliability (retry/error handling),
-- Compliance and reporting needs (audit retention, queryability, export/reporting).
+- Trigger: Recurrence (every 15 minutes by default).
+- Reads `ProvisioningEvent` rows where:
+  - status is `Pending`, or
+  - status is `Failed` and retry count is below `MaxRetries`.
+- Sends one grouped digest email to `NotificationDL`.
+- Optionally posts to Teams when enabled.
+- Updates each event row to `Sent` or `Failed` with audit details:
+  - channel
+  - recipient
+  - sent timestamp
+  - retry count
+  - error message
+  - flow run URL
 
-If constraints exceed connector/runtime limits, evaluate an **Azure-centric** implementation path.
+## Power Platform components
+
+### Dataverse tables
+
+1. **LicenseSnapshot**
+   - SKU baseline storage for tenant comparison.
+2. **ProvisioningEvent**
+   - One row per detected event and notification outcome.
+3. **DetectionCheckpoint**
+   - Polling watermark and run-state tracking.
+
+### Environment variables
+
+- `TenantID`
+- `ClientID`
+- `Secret`
+- `M365GroupID` (legacy 80% usage flow)
+- `NotificationDL`
+- `PollOverlapMinutes` (default `30`)
+- `MaxRetries` (default `3`)
+- `EnableTeamsNotification` (default `false`)
+- `GraphBaseUrl` (default `https://graph.microsoft.com`)
+- `AuthorityUrl` (default `https://login.microsoftonline.com`)
+
+### Connection references
+
+- Dataverse
+- Office 365 Outlook
+- Teams
+- Office 365 Groups (legacy flow)
+
+## Microsoft Graph permissions
+
+Required for app registration used by HTTP actions:
+
+- `Organization.Read.All`
+- `AuditLog.Read.All`
+
+Optional:
+
+- `User.Read.All` (if additional user enrichment is needed)
+
+## Notifications and audit behavior
+
+- Notification channel is digest email by default.
+- Teams notification is optional.
+- Processing is at-least-once with dedupe controls.
+- Audit rows are retained for reporting and operational traceability.
+
+## Solution package
+
+- `M365LicenseNotification_1_1_0_0.zip` contains the unmanaged solution package.
+- `solution/` contains unpacked solution artifacts.
+- `solution-src/` contains source used for packing and maintenance.
