@@ -1,0 +1,43 @@
+name: ALM CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-validate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Power Platform CLI
+        shell: pwsh
+        run: |
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+          pac
+          pac help
+
+      - name: Validate solution pack/unpack
+        shell: pwsh
+        run: |
+          ./scripts/validate-solution.ps1
+
+      - name: Build managed and unmanaged artifacts
+        shell: pwsh
+        run: |
+          ./scripts/build-solution.ps1
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m365-license-notification-solution
+          path: out/*.zip

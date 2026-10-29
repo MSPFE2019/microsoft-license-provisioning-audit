@@ -1,0 +1,58 @@
+name: Deploy Managed Solution
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetEnvironment:
+        description: "Target environment (test or prod)"
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    environment: ${{ inputs.targetEnvironment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Power Platform CLI
+        shell: pwsh
+        run: |
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+          pac help
+
+      - name: Build managed solution
+        shell: pwsh
+        run: |
+          ./scripts/build-solution.ps1
+
+      - name: Authenticate with service principal
+        shell: pwsh
+        run: |
+          pac auth create `
+            --name GitHubDeploy `
+            --applicationId "${{ secrets.PP_APP_ID }}" `
+            --clientSecret "${{ secrets.PP_CLIENT_SECRET }}" `
+            --tenant "${{ secrets.PP_TENANT_ID }}" `
+            --url "${{ secrets.PP_ENV_URL }}"
+          pac auth select --name GitHubDeploy
+
+      - name: Deploy managed solution
+        shell: pwsh
+        run: |
+          $settingsFile = "config/deploymentSettings.${{ inputs.targetEnvironment }}.json"
+          pac solution import `
+            --path "out/M365LicenseNotification_managed.zip" `
+            --settings-file $settingsFile `
+            --activate-plugins `
+            --publish-changes

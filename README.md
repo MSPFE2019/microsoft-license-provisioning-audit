@@ -1,109 +1,101 @@
-# Microsoft License Provisioning Audit (Power Platform Solution)
+# Microsoft License Provisioning Audit - ALM-Ready Power Platform Solution
 
-## What this solution does
+This repository is structured for **Power Platform ALM best practices**: source-controlled solution components, repeatable build, automated validation, and managed deployment by environment.
 
-This Power Platform solution detects new Microsoft license provisioning activity, sends operational notifications, and stores a durable audit trail.
+## Solution scope
 
-It covers two provisioning signals:
+The solution detects provisioning activity and keeps an auditable notification history:
 
-1. **Tenant-level provisioning**
-   - New SKU appears in tenant subscriptions.
-   - Enabled unit count increases for an existing SKU.
-2. **User-level provisioning**
-   - License assignments detected from Entra directory audit events (`Change user license`), including group-based assignment activity.
+1. Tenant-level license provisioning detection (`subscribedSkus` baseline compare)
+2. User-level license assignment detection (`directoryAudits` with overlap + dedupe)
+3. Grouped digest notifications with retry tracking
+4. Dataverse audit trail (`LicenseSnapshot`, `ProvisioningEvent`, `DetectionCheckpoint`)
 
-## How it works
+## ALM implementation in this repo
 
-The design uses decoupled Power Automate flows, with Dataverse as the system of record.
+### 1) Source-first structure
 
-### Flow 1: Detect Tenant License Provisioning
+- `src/solutions/M365LicenseNotification/` stores unpacked solution source.
+- Build artifacts are generated into `out/` and ignored by Git.
+- No environment-specific values are hard-coded into source.
 
-- Trigger: Recurrence (hourly by default).
-- Reads Graph `subscribedSkus`.
-- Compares current values to Dataverse `LicenseSnapshot`.
-- Writes `ProvisioningEvent` rows with `Pending` notification status for:
-  - `TenantSkuNew`
-  - `TenantSkuIncrease`
-- Updates or creates snapshot rows.
-- First run seeds baseline and does not notify.
+### 2) Environment parameterization
 
-### Flow 2: Detect User License Assignments
+Deployment settings files are split by stage:
 
-- Trigger: Recurrence (every 15 minutes by default).
-- Reads checkpoint watermark from Dataverse `DetectionCheckpoint`.
-- Queries Graph `auditLogs/directoryAudits` for `Change user license`.
-- Uses overlap window + dedupe strategy to account for log latency.
-- Writes `ProvisioningEvent` rows with `Pending` status for `UserLicenseAssigned`.
-- Advances checkpoint after successful processing.
-- First run establishes checkpoint baseline.
+- `config/deploymentSettings.dev.json`
+- `config/deploymentSettings.test.json`
+- `config/deploymentSettings.prod.json`
 
-### Flow 3: Send Provisioning Notification
+Each file maps:
 
-- Trigger: Recurrence (every 15 minutes by default).
-- Reads `ProvisioningEvent` rows where:
-  - status is `Pending`, or
-  - status is `Failed` and retry count is below `MaxRetries`.
-- Sends one grouped digest email to `NotificationDL`.
-- Optionally posts to Teams when enabled.
-- Updates each event row to `Sent` or `Failed` with audit details:
-  - channel
-  - recipient
-  - sent timestamp
-  - retry count
-  - error message
-  - flow run URL
+- Environment variable values
+- Connection references
 
-## Power Platform components
+### 3) Automated validation and packaging
 
-### Dataverse tables
+Scripts:
 
-1. **LicenseSnapshot**
-   - SKU baseline storage for tenant comparison.
-2. **ProvisioningEvent**
-   - One row per detected event and notification outcome.
-3. **DetectionCheckpoint**
-   - Polling watermark and run-state tracking.
+- `scripts/validate-solution.ps1`
+  - Packs and unpacks to validate source integrity.
+- `scripts/build-solution.ps1`
+  - Builds both:
+    - `M365LicenseNotification_unmanaged.zip`
+    - `M365LicenseNotification_managed.zip`
 
-### Environment variables
+### 4) CI quality gate
 
-- `TenantID`
-- `ClientID`
-- `Secret`
-- `M365GroupID` (legacy 80% usage flow)
-- `NotificationDL`
-- `PollOverlapMinutes` (default `30`)
-- `MaxRetries` (default `3`)
-- `EnableTeamsNotification` (default `false`)
-- `GraphBaseUrl` (default `https://graph.microsoft.com`)
-- `AuthorityUrl` (default `https://login.microsoftonline.com`)
+GitHub Actions workflow:
 
-### Connection references
+- `.github/workflows/alm-ci.yml`
+  - Installs PAC CLI
+  - Runs validation
+  - Builds managed/unmanaged zips
+  - Publishes solution artifacts
 
-- Dataverse
-- Office 365 Outlook
-- Teams
-- Office 365 Groups (legacy flow)
+### 5) Controlled managed deployment
 
-## Microsoft Graph permissions
+GitHub Actions workflow:
 
-Required for app registration used by HTTP actions:
+- `.github/workflows/deploy-managed.yml`
+  - Manual promotion to `test` or `prod`
+  - Service principal authentication
+  - Managed import with environment-specific settings file
 
-- `Organization.Read.All`
-- `AuditLog.Read.All`
+## Required GitHub secrets for deployment workflow
 
-Optional:
+Set these repository/environment secrets:
 
-- `User.Read.All` (if additional user enrichment is needed)
+- `PP_APP_ID`
+- `PP_CLIENT_SECRET`
+- `PP_TENANT_ID`
+- `PP_ENV_URL`
 
-## Notifications and audit behavior
+## Local build and validation
 
-- Notification channel is digest email by default.
-- Teams notification is optional.
-- Processing is at-least-once with dedupe controls.
-- Audit rows are retained for reporting and operational traceability.
+Run from repo root:
 
-## Solution package
+```powershell
+./scripts/validate-solution.ps1
+./scripts/build-solution.ps1
+```
 
-- `M365LicenseNotification_1_1_0_0.zip` contains the unmanaged solution package.
-- `solution/` contains unpacked solution artifacts.
-- `solution-src/` contains source used for packing and maintenance.
+Outputs:
+
+- `out/M365LicenseNotification_unmanaged.zip`
+- `out/M365LicenseNotification_managed.zip`
+
+## ALM best practices applied
+
+1. **Managed-to-upstream promotion**: deploy managed in test/prod.
+2. **Configuration externalization**: values supplied per environment via deployment settings.
+3. **Service principal automation**: no interactive auth in CI/CD.
+4. **Repeatable builds**: deterministic pack from source.
+5. **Environment isolation**: separate deployment profiles and approvals.
+6. **Auditability**: event rows include detection + notification lifecycle fields.
+
+## Operational notes
+
+- Existing legacy flow (80% consumption alert) remains in the solution source.
+- `cr3f6_Secret` exists as an environment variable; production should use Key Vault-backed secret handling.
+- Sovereign cloud routing is supported through `GraphBaseUrl` and `AuthorityUrl` variables, but tenant validation is still required.

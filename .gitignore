@@ -1,0 +1,17 @@
+# Build outputs
+out/
+dist/
+artifacts/
+
+# Local tooling state
+*.user
+*.suo
+.vs/
+
+# Environment files
+.env
+.env.*
+
+# OS noise
+Thumbs.db
+Desktop.ini

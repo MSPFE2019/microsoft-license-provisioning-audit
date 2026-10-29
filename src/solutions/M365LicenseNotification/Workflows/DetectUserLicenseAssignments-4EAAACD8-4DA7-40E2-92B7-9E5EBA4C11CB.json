@@ -1,0 +1,322 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "TenantID (cr3f6_TenantID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_TenantID"
+          }
+        },
+        "ClientID (cr3f6_ClientID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_ClientID"
+          }
+        },
+        "Secret (cr3f6_Secret)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_Secret"
+          }
+        },
+        "GraphBaseUrl (cr3f6_GraphBaseUrl)": {
+          "defaultValue": "https://graph.microsoft.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_GraphBaseUrl"
+          }
+        },
+        "AuthorityUrl (cr3f6_AuthorityUrl)": {
+          "defaultValue": "https://login.microsoftonline.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_AuthorityUrl"
+          }
+        },
+        "PollOverlapMinutes (cr3f6_PollOverlapMinutes)": {
+          "defaultValue": 30,
+          "type": "Int",
+          "metadata": {
+            "schemaName": "cr3f6_PollOverlapMinutes"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 15
+          }
+        }
+      },
+      "actions": {
+        "List_UserAudit_Checkpoint": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "cr3f6_detectioncheckpoints",
+              "$filter": "cr3f6_name eq 'UserAudit'"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_Watermark": {
+          "runAfter": {
+            "List_UserAudit_Checkpoint": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varWatermark",
+                "type": "string",
+                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),first(body('List_UserAudit_Checkpoint')?['value'])?['cr3f6_lastprocessedutc'],utcNow())"
+              }
+            ]
+          }
+        },
+        "Initialize_Overlap": {
+          "runAfter": {
+            "Initialize_Watermark": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varWatermarkWithOverlap",
+                "type": "string",
+                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),addMinutes(variables('varWatermark'),mul(-1,int(parameters('PollOverlapMinutes (cr3f6_PollOverlapMinutes)')))),variables('varWatermark'))"
+              }
+            ]
+          }
+        },
+        "HTTP_DirectoryAudits": {
+          "runAfter": {
+            "Initialize_Overlap": [
+              "Succeeded"
+            ]
+          },
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "@{parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')}/v1.0/auditLogs/directoryAudits?$filter=activityDisplayName eq 'Change user license' and activityDateTime ge @{variables('varWatermarkWithOverlap')}&$orderby=activityDateTime asc",
+            "authentication": {
+              "type": "ActiveDirectoryOAuth",
+              "authority": "@parameters('AuthorityUrl (cr3f6_AuthorityUrl)')",
+              "tenant": "@parameters('TenantID (cr3f6_TenantID)')",
+              "audience": "@parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')",
+              "clientId": "@parameters('ClientID (cr3f6_ClientID)')",
+              "secret": "@parameters('Secret (cr3f6_Secret)')"
+            }
+          }
+        },
+        "Parse_DirectoryAudits": {
+          "runAfter": {
+            "HTTP_DirectoryAudits": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP_DirectoryAudits')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "activityDateTime": {
+                        "type": "string"
+                      },
+                      "initiatedBy": {
+                        "type": "object"
+                      },
+                      "targetResources": {
+                        "type": "array"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "For_Each_Audit": {
+          "runAfter": {
+            "Parse_DirectoryAudits": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach",
+          "foreach": "@body('Parse_DirectoryAudits')?['value']",
+          "actions": {
+            "List_Event_BySourceId": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "cr3f6_provisioningevents",
+                  "$filter": "cr3f6_sourceid eq '@{items('For_Each_Audit')?['id']}'"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "If_Not_Deduped": {
+              "runAfter": {
+                "List_Event_BySourceId": [
+                  "Succeeded"
+                ]
+              },
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@length(body('List_Event_BySourceId')?['value'])",
+                  0
+                ]
+              },
+              "actions": {
+                "Create_UserLicenseAssigned_Event": {
+                  "runAfter": {},
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "CreateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "cr3f6_provisioningevents",
+                      "item": {
+                        "cr3f6_name": "User license assignment @ @{items('For_Each_Audit')?['activityDateTime']}",
+                        "cr3f6_sourceid": "@{items('For_Each_Audit')?['id']}",
+                        "cr3f6_eventtype": 631230003,
+                        "cr3f6_targetuserupn": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['userPrincipalName'],'')}",
+                        "cr3f6_targetuserid": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['id'],'')}",
+                        "cr3f6_initiatedby": "@{coalesce(items('For_Each_Audit')?['initiatedBy']?['user']?['userPrincipalName'],items('For_Each_Audit')?['initiatedBy']?['app']?['displayName'],'system')}",
+                        "cr3f6_eventtimeutc": "@{items('For_Each_Audit')?['activityDateTime']}",
+                        "cr3f6_detectedon": "@utcNow()",
+                        "cr3f6_notificationstatus": 631230011
+                      }
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            }
+          }
+        },
+        "Upsert_UserAudit_Checkpoint": {
+          "runAfter": {
+            "For_Each_Audit": [
+              "Succeeded"
+            ]
+          },
+          "type": "If",
+          "expression": {
+            "greater": [
+              "@length(body('List_UserAudit_Checkpoint')?['value'])",
+              0
+            ]
+          },
+          "actions": {
+            "Update_UserAudit_Checkpoint": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "UpdateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "cr3f6_detectioncheckpoints",
+                  "recordId": "@first(body('List_UserAudit_Checkpoint')?['value'])?['cr3f6_detectioncheckpointid']",
+                  "item": {
+                    "cr3f6_lastprocessedutc": "@utcNow()",
+                    "cr3f6_lastrunstatus": 631230022
+                  }
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Create_UserAudit_Checkpoint": {
+                "runAfter": {},
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_commondataserviceforapps_1",
+                    "operationId": "CreateRecord",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                  },
+                  "parameters": {
+                    "entityName": "cr3f6_detectioncheckpoints",
+                    "item": {
+                      "cr3f6_name": "UserAudit",
+                      "cr3f6_lastprocessedutc": "@utcNow()",
+                      "cr3f6_lastrunstatus": 631230022
+                    }
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "templateName": "Detect User License Assignments"
+  },
+  "schemaVersion": "1.0.0.0"
+}

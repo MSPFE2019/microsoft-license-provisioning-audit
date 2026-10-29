@@ -1,0 +1,62 @@
+{
+  "EnvironmentVariables": [
+    {
+      "SchemaName": "cr3f6_TenantID",
+      "Value": ""
+    },
+    {
+      "SchemaName": "cr3f6_ClientID",
+      "Value": ""
+    },
+    {
+      "SchemaName": "cr3f6_Secret",
+      "Value": ""
+    },
+    {
+      "SchemaName": "cr3f6_M365GroupID",
+      "Value": ""
+    },
+    {
+      "SchemaName": "cr3f6_NotificationDL",
+      "Value": ""
+    },
+    {
+      "SchemaName": "cr3f6_PollOverlapMinutes",
+      "Value": "30"
+    },
+    {
+      "SchemaName": "cr3f6_MaxRetries",
+      "Value": "3"
+    },
+    {
+      "SchemaName": "cr3f6_EnableTeamsNotification",
+      "Value": "false"
+    },
+    {
+      "SchemaName": "cr3f6_GraphBaseUrl",
+      "Value": "https://graph.microsoft.com"
+    },
+    {
+      "SchemaName": "cr3f6_AuthorityUrl",
+      "Value": "https://login.microsoftonline.com"
+    }
+  ],
+  "ConnectionReferences": [
+    {
+      "LogicalName": "cr3f6_M365LN_Dataverse",
+      "ConnectionId": ""
+    },
+    {
+      "LogicalName": "cr3f6_M365LN_Outlook",
+      "ConnectionId": ""
+    },
+    {
+      "LogicalName": "cr3f6_M365LN_Teams",
+      "ConnectionId": ""
+    },
+    {
+      "LogicalName": "cr3f6_M365LN_OfficeGroup",
+      "ConnectionId": ""
+    }
+  ]
+}

@@ -1,0 +1,492 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365groups_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_OfficeGroup"
+        },
+        "api": {
+          "name": "shared_office365groups"
+        }
+      },
+      "shared_teams_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Teams"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "TenantID (cr3f6_TenantID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_TenantID",
+            "description": "M365 License Tenant ID "
+          }
+        },
+        "ClientID (cr3f6_ClientID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_ClientID",
+            "description": "M365 License ClientID"
+          }
+        },
+        "Secret (cr3f6_Secret)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_Secret",
+            "description": "Secret M365 License"
+          }
+        },
+        "M365 GroupID (cr3f6_M365GroupID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_M365GroupID",
+            "description": "M365 GroupID - M365 License"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "startTime": "2023-07-19T15:00:00Z"
+          },
+          "metadata": {
+            "operationMetadataId": "a4ee4dd8-76c3-4aad-a0c3-5583eff91b51"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "runAfter": {
+            "Initialize_variable_-_varConsumed": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1454d6b5-ef82-42d9-9704-6c1306abff08"
+          },
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "https://graph.microsoft.com/v1.0/subscribedSkus",
+            "authentication": {
+              "type": "ActiveDirectoryOAuth",
+              "authority": "https://login.microsoftonline.com",
+              "tenant": "@variables('varTenantID')",
+              "audience": "https://graph.microsoft.com",
+              "clientId": "@variables('varClientID')",
+              "secret": "@variables('varSecret')"
+            }
+          }
+        },
+        "Parse_JSON": {
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1cc44772-d60f-4422-8eea-8c522fdb7e4e"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "@@odata.context": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "accountName": {
+                        "type": "string"
+                      },
+                      "accountId": {
+                        "type": "string"
+                      },
+                      "appliesTo": {
+                        "type": "string"
+                      },
+                      "capabilityStatus": {
+                        "type": "string"
+                      },
+                      "consumedUnits": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "skuId": {
+                        "type": "string"
+                      },
+                      "skuPartNumber": {
+                        "type": "string"
+                      },
+                      "subscriptionIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "prepaidUnits": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "integer"
+                          },
+                          "suspended": {
+                            "type": "integer"
+                          },
+                          "warning": {
+                            "type": "integer"
+                          },
+                          "lockedOut": {
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "servicePlans": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "servicePlanId": {
+                              "type": "string"
+                            },
+                            "servicePlanName": {
+                              "type": "string"
+                            },
+                            "provisioningStatus": {
+                              "type": "string"
+                            },
+                            "appliesTo": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "servicePlanId",
+                            "servicePlanName",
+                            "provisioningStatus",
+                            "appliesTo"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "accountName",
+                      "accountId",
+                      "appliesTo",
+                      "capabilityStatus",
+                      "consumedUnits",
+                      "id",
+                      "skuId",
+                      "skuPartNumber",
+                      "subscriptionIds",
+                      "prepaidUnits",
+                      "servicePlans"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@body('Parse_JSON')?['value']",
+          "actions": {
+            "Compose_-_skuPartNumber": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "a60b8065-d2b6-4962-8624-5d2b0d91ab21"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['skuPartNumber']"
+            },
+            "Set_variable_-varEnabled2Num": {
+              "runAfter": {
+                "Compose_-_skuPartNumber": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "35efb9d7-9b58-4a36-b867-c5aec81efff7"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varEnabled",
+                "value": "@int(items('Apply_to_each')?['prepaidUnits']?['enabled'])"
+              }
+            },
+            "Set_variable_-_varConsumed2Num": {
+              "runAfter": {
+                "Set_variable_-varEnabled2Num": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "669acc08-5a70-4148-b9ba-4c0db76df832"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varConsumed",
+                "value": "@int(items('Apply_to_each')?['consumedUnits'])"
+              }
+            },
+            "Compose": {
+              "runAfter": {
+                "Set_variable_-_varConsumed2Num": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "dbba2459-24f1-45ee-b04b-6b06958f5025"
+              },
+              "type": "Compose",
+              "inputs": "@div(variables('varConsumed'),float(variables('varEnabled')))"
+            },
+            "Format_number": {
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "6ae4ca41-32b0-423d-a7fa-75aa937969a2"
+              },
+              "type": "Expression",
+              "kind": "FormatNumber",
+              "inputs": {
+                "number": "@outputs('Compose')",
+                "format": "0.00 %"
+              }
+            },
+            "Condition": {
+              "actions": {
+                "List_group_members": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "ac6c22b5-1164-4eff-9497-68b83641ac9a"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365groups_1",
+                      "operationId": "ListGroupMembers",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365groups"
+                    },
+                    "parameters": {
+                      "groupId": "@variables('varOfficeGroupID')"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Apply_to_each_2": {
+                  "foreach": "@outputs('List_group_members')?['body/value']",
+                  "actions": {
+                    "Post_message_in_a_chat_or_channel": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "e88c4aae-f5fb-45db-bcfa-2bf805298b14"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_teams_1",
+                          "operationId": "PostMessageToConversation",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                        },
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@{items('Apply_to_each_2')?['mail']};",
+                          "body/messageBody": "<p>@{items('Apply_to_each')?['skuPartNumber']} is @{body('Format_number')} . Please order more licenses</p>"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "List_group_members": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "0946822d-6aca-47cc-8037-904a9e3c199d"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "Format_number": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "greaterOrEquals": [
+                  "@float(outputs('Compose'))",
+                  0.8
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8f7d9bfd-7660-4a43-8c85-1d7f58316f3b"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Parse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6096f748-3573-4d89-98ff-eea492bd60c4"
+          },
+          "type": "Foreach"
+        },
+        "Initialize_variable_-_TenantID": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "89b672d3-eac0-48b1-9466-f0d0860a9915"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varTenantID",
+                "type": "string",
+                "value": "@parameters('TenantID (cr3f6_TenantID)')"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_-_varEnabled": {
+          "runAfter": {
+            "Initialize_variable_-_OfficeGroupID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b2bceb07-77ea-493e-95fa-9caad2f75b3a"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varEnabled",
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_-_varConsumed": {
+          "runAfter": {
+            "Initialize_variable_-_varEnabled": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f20b2267-9fb2-413e-90ce-45d482d64fdd"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varConsumed",
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_-ClientID": {
+          "runAfter": {
+            "Initialize_variable_-_TenantID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1a4eb6d8-da16-4bd7-851b-e5b1555f4bf0"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varClientID",
+                "type": "string",
+                "value": "@parameters('ClientID (cr3f6_ClientID)')"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_-_Secret": {
+          "runAfter": {
+            "Initialize_variable_-ClientID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b6267257-a3e0-4c0d-aa01-b6432cee6632"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSecret",
+                "type": "string",
+                "value": "@parameters('Secret (cr3f6_Secret)')"
+              }
+            ]
+          }
+        },
+        "Initialize_variable_-_OfficeGroupID": {
+          "runAfter": {
+            "Initialize_variable_-_Secret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d783933e-2385-41bf-b3e6-9710321e4be6"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varOfficeGroupID",
+                "type": "string",
+                "value": "@parameters('M365 GroupID (cr3f6_M365GroupID)')"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

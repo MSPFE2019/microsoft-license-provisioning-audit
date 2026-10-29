@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="cr3f6_AuthorityUrl">
+  <description default="Microsoft Entra authority base URL">
+    <label description="Microsoft Entra authority base URL" languagecode="1033" />
+  </description>
+  <displayname default="AuthorityUrl">
+    <label description="AuthorityUrl" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.1.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

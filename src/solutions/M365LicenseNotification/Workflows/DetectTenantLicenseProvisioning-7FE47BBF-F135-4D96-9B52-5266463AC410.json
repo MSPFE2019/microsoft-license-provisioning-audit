@@ -1,0 +1,407 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "TenantID (cr3f6_TenantID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_TenantID"
+          }
+        },
+        "ClientID (cr3f6_ClientID)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_ClientID"
+          }
+        },
+        "Secret (cr3f6_Secret)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_Secret"
+          }
+        },
+        "GraphBaseUrl (cr3f6_GraphBaseUrl)": {
+          "defaultValue": "https://graph.microsoft.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_GraphBaseUrl"
+          }
+        },
+        "AuthorityUrl (cr3f6_AuthorityUrl)": {
+          "defaultValue": "https://login.microsoftonline.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_AuthorityUrl"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Hour",
+            "interval": 1
+          }
+        }
+      },
+      "actions": {
+        "List_Baseline_Checkpoint": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "cr3f6_detectioncheckpoints",
+              "$filter": "cr3f6_name eq 'TenantBaselineSeeded'"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_BaselineSeeded": {
+          "runAfter": {
+            "List_Baseline_Checkpoint": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varBaselineSeeded",
+                "type": "boolean",
+                "value": "@greater(length(body('List_Baseline_Checkpoint')?['value']),0)"
+              }
+            ]
+          }
+        },
+        "HTTP_SubscribedSkus": {
+          "runAfter": {
+            "Initialize_BaselineSeeded": [
+              "Succeeded"
+            ]
+          },
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "@{parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')}/v1.0/subscribedSkus",
+            "authentication": {
+              "type": "ActiveDirectoryOAuth",
+              "authority": "@parameters('AuthorityUrl (cr3f6_AuthorityUrl)')",
+              "tenant": "@parameters('TenantID (cr3f6_TenantID)')",
+              "audience": "@parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')",
+              "clientId": "@parameters('ClientID (cr3f6_ClientID)')",
+              "secret": "@parameters('Secret (cr3f6_Secret)')"
+            }
+          }
+        },
+        "Parse_SubscribedSkus": {
+          "runAfter": {
+            "HTTP_SubscribedSkus": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP_SubscribedSkus')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "skuId": {
+                        "type": "string"
+                      },
+                      "skuPartNumber": {
+                        "type": "string"
+                      },
+                      "consumedUnits": {
+                        "type": "integer"
+                      },
+                      "prepaidUnits": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "integer"
+                          },
+                          "suspended": {
+                            "type": "integer"
+                          },
+                          "warning": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "For_Each_SKU": {
+          "runAfter": {
+            "Parse_SubscribedSkus": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach",
+          "foreach": "@body('Parse_SubscribedSkus')?['value']",
+          "actions": {
+            "List_Snapshot_BySkuId": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "cr3f6_licensesnapshots",
+                  "$filter": "cr3f6_skuid eq '@{items('For_Each_SKU')?['skuId']}'"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "If_Existing_Snapshot": {
+              "runAfter": {
+                "List_Snapshot_BySkuId": [
+                  "Succeeded"
+                ]
+              },
+              "type": "If",
+              "expression": {
+                "greater": [
+                  "@length(body('List_Snapshot_BySkuId')?['value'])",
+                  0
+                ]
+              },
+              "actions": {
+                "If_Enabled_Increased": {
+                  "runAfter": {},
+                  "type": "If",
+                  "expression": {
+                    "greater": [
+                      "@int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])",
+                      "@int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits'])"
+                    ]
+                  },
+                  "actions": {
+                    "Create_TenantSkuIncrease_Event": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps_1",
+                          "operationId": "CreateRecord",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "parameters": {
+                          "entityName": "cr3f6_provisioningevents",
+                          "item": {
+                            "cr3f6_name": "@{items('For_Each_SKU')?['skuPartNumber']} increase @ @{utcNow()}",
+                            "cr3f6_sourceid": "@{items('For_Each_SKU')?['skuId']}-@{items('For_Each_SKU')?['prepaidUnits']?['enabled']}-@{ticks(utcNow())}",
+                            "cr3f6_eventtype": 631230001,
+                            "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                            "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                            "cr3f6_previousunits": "@{int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits'])}",
+                            "cr3f6_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                            "cr3f6_delta": "@{sub(int(items('For_Each_SKU')?['prepaidUnits']?['enabled']),int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits']))}",
+                            "cr3f6_eventtimeutc": "@utcNow()",
+                            "cr3f6_detectedon": "@utcNow()",
+                            "cr3f6_notificationstatus": 631230011
+                          }
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  }
+                },
+                "Update_Snapshot": {
+                  "runAfter": {
+                    "If_Enabled_Increased": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "cr3f6_licensesnapshots",
+                      "recordId": "@first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_licensesnapshotid']",
+                      "item": {
+                        "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                        "cr3f6_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                        "cr3f6_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                        "cr3f6_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
+                        "cr3f6_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
+                        "cr3f6_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
+                        "cr3f6_lastcheckedon": "@utcNow()"
+                      }
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Create_NewSku_Event_When_Baseline_Exists": {
+                    "runAfter": {},
+                    "type": "If",
+                    "expression": {
+                      "equals": [
+                        "@variables('varBaselineSeeded')",
+                        true
+                      ]
+                    },
+                    "actions": {
+                      "Create_TenantSkuNew_Event": {
+                        "runAfter": {},
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps_1",
+                            "operationId": "CreateRecord",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "cr3f6_provisioningevents",
+                            "item": {
+                              "cr3f6_name": "@{items('For_Each_SKU')?['skuPartNumber']} new SKU @ @{utcNow()}",
+                              "cr3f6_sourceid": "@{items('For_Each_SKU')?['skuId']}-new-@{ticks(utcNow())}",
+                              "cr3f6_eventtype": 631230002,
+                              "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                              "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                              "cr3f6_previousunits": 0,
+                              "cr3f6_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                              "cr3f6_delta": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                              "cr3f6_eventtimeutc": "@utcNow()",
+                              "cr3f6_detectedon": "@utcNow()",
+                              "cr3f6_notificationstatus": 631230011
+                            }
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    }
+                  },
+                  "Create_Snapshot": {
+                    "runAfter": {
+                      "Create_NewSku_Event_When_Baseline_Exists": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_commondataserviceforapps_1",
+                        "operationId": "CreateRecord",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                      },
+                      "parameters": {
+                        "entityName": "cr3f6_licensesnapshots",
+                        "item": {
+                          "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                          "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                          "cr3f6_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                          "cr3f6_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                          "cr3f6_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
+                          "cr3f6_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
+                          "cr3f6_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
+                          "cr3f6_lastcheckedon": "@utcNow()"
+                        }
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Create_Baseline_Checkpoint": {
+          "runAfter": {
+            "For_Each_SKU": [
+              "Succeeded"
+            ]
+          },
+          "type": "If",
+          "expression": {
+            "equals": [
+              "@variables('varBaselineSeeded')",
+              false
+            ]
+          },
+          "actions": {
+            "Create_TenantBaselineSeeded_Row": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "cr3f6_detectioncheckpoints",
+                  "item": {
+                    "cr3f6_name": "TenantBaselineSeeded",
+                    "cr3f6_lastrunstatus": 631230022,
+                    "cr3f6_lastprocessedutc": "@utcNow()"
+                  }
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          }
+        }
+      }
+    },
+    "templateName": "Detect Tenant License Provisioning"
+  },
+  "schemaVersion": "1.0.0.0"
+}

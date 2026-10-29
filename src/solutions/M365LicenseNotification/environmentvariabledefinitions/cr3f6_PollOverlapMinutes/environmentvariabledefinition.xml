@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="cr3f6_PollOverlapMinutes">
+  <description default="Overlap window in minutes for audit polling dedupe">
+    <label description="Overlap window in minutes for audit polling dedupe" languagecode="1033" />
+  </description>
+  <displayname default="PollOverlapMinutes">
+    <label description="PollOverlapMinutes" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.1.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000001</type>
+</environmentvariabledefinition>

@@ -1,0 +1,48 @@
+{
+  "name": "License Audit Service",
+  "schemaName": "cr3f6_LicenseAuditService",
+  "description": "Service role for flow runtime writes to license audit trail tables.",
+  "scope": "Organization",
+  "tables": [
+    {
+      "logicalName": "cr3f6_licensesnapshot",
+      "privileges": {
+        "read": "Organization",
+        "appendTo": "Organization",
+        "append": "Organization",
+        "write": "Organization",
+        "create": "Organization",
+        "delete": "None",
+        "share": "None",
+        "assign": "None"
+      }
+    },
+    {
+      "logicalName": "cr3f6_provisioningevent",
+      "privileges": {
+        "read": "Organization",
+        "appendTo": "Organization",
+        "append": "Organization",
+        "write": "Organization",
+        "create": "Organization",
+        "delete": "None",
+        "share": "None",
+        "assign": "None"
+      }
+    },
+    {
+      "logicalName": "cr3f6_detectioncheckpoint",
+      "privileges": {
+        "read": "Organization",
+        "appendTo": "Organization",
+        "append": "Organization",
+        "write": "Organization",
+        "create": "Organization",
+        "delete": "None",
+        "share": "None",
+        "assign": "None"
+      }
+    }
+  ],
+  "notes": "Create this role in the target environment after import; role XML is not authored in this package because role privilege XML is environment-dependent."
+}

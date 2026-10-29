@@ -1,0 +1,214 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_office365_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Outlook"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr3f6_M365LN_Teams"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "NotificationDL (cr3f6_NotificationDL)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "cr3f6_NotificationDL"
+          }
+        },
+        "MaxRetries (cr3f6_MaxRetries)": {
+          "defaultValue": 3,
+          "type": "Int",
+          "metadata": {
+            "schemaName": "cr3f6_MaxRetries"
+          }
+        },
+        "EnableTeamsNotification (cr3f6_EnableTeamsNotification)": {
+          "defaultValue": false,
+          "type": "Bool",
+          "metadata": {
+            "schemaName": "cr3f6_EnableTeamsNotification"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 15
+          }
+        }
+      },
+      "actions": {
+        "List_PendingOrRetryable_Events": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "cr3f6_provisioningevents",
+              "$filter": "(cr3f6_notificationstatus eq 631230011) or (cr3f6_notificationstatus eq 631230013 and cr3f6_retrycount lt @{int(parameters('MaxRetries (cr3f6_MaxRetries)'))})"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "If_Events_Exist": {
+          "runAfter": {
+            "List_PendingOrRetryable_Events": [
+              "Succeeded"
+            ]
+          },
+          "type": "If",
+          "expression": {
+            "greater": [
+              "@length(body('List_PendingOrRetryable_Events')?['value'])",
+              0
+            ]
+          },
+          "actions": {
+            "Compose_EmailBody": {
+              "runAfter": {},
+              "type": "Compose",
+              "inputs": "<p>Provisioning events detected:</p><p>Total events in this digest: @{length(body('List_PendingOrRetryable_Events')?['value'])}</p><p>This digest is grouped by run. Review Dataverse table cr3f6_ProvisioningEvent for full audit details.</p>"
+            },
+            "Send_Digest_Email": {
+              "runAfter": {
+                "Compose_EmailBody": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365_1",
+                  "operationId": "SendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
+                "parameters": {
+                  "emailMessage/To": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
+                  "emailMessage/Subject": "M365 License Provisioning Digest - @{utcNow()}",
+                  "emailMessage/Body": "@outputs('Compose_EmailBody')",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Optional_Teams_Notification": {
+              "runAfter": {
+                "Send_Digest_Email": [
+                  "Succeeded"
+                ]
+              },
+              "type": "If",
+              "expression": {
+                "equals": [
+                  "@parameters('EnableTeamsNotification (cr3f6_EnableTeamsNotification)')",
+                  true
+                ]
+              },
+              "actions": {
+                "Post_message_in_a_chat_or_channel": {
+                  "runAfter": {},
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_teams_1",
+                      "operationId": "PostMessageToConversation",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                    },
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Chat with Flow bot",
+                      "body/recipient": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
+                      "body/messageBody": "<p>M365 License Provisioning digest email sent. Event count: @{length(body('List_PendingOrRetryable_Events')?['value'])}</p>"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "For_Each_Event_Mark_Sent": {
+              "runAfter": {
+                "Optional_Teams_Notification": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach",
+              "foreach": "@body('List_PendingOrRetryable_Events')?['value']",
+              "actions": {
+                "Update_Event_Status_Sent": {
+                  "runAfter": {},
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "cr3f6_provisioningevents",
+                      "recordId": "@items('For_Each_Event_Mark_Sent')?['cr3f6_provisioningeventid']",
+                      "item": {
+                        "cr3f6_notificationstatus": 631230012,
+                        "cr3f6_notificationchannel": "Email Digest",
+                        "cr3f6_notificationrecipient": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
+                        "cr3f6_notificationsenton": "@utcNow()",
+                        "cr3f6_flowrunurl": "@{workflow()?['run']?['name']}"
+                      }
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {}
+          }
+        }
+      }
+    },
+    "templateName": "Send Provisioning Notification"
+  },
+  "schemaVersion": "1.0.0.0"
+}
