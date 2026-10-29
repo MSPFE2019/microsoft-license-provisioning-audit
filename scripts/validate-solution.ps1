@@ -1,5 +1,5 @@
 param(
-    [string]$SourceFolder = "src/solutions/M365LicenseNotification",
+    [string]$SourceFolder = "src/solutions/microsoft-license-provisioning-audit",
     [string]$TempFolder = "out/validate"
 )
 

@@ -52,7 +52,7 @@ jobs:
         run: |
           $settingsFile = "config/deploymentSettings.${{ inputs.targetEnvironment }}.json"
           pac solution import `
-            --path "out/M365LicenseNotification_managed.zip" `
+            --path "out/microsoft-license-provisioning-audit_managed.zip" `
             --settings-file $settingsFile `
             --activate-plugins `
             --publish-changes

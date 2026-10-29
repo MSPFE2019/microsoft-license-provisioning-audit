@@ -1,6 +1,6 @@
 param(
-    [string]$SolutionName = "M365LicenseNotification",
-    [string]$SourceFolder = "src/solutions/M365LicenseNotification",
+    [string]$SolutionName = "microsoft-license-provisioning-audit",
+    [string]$SourceFolder = "src/solutions/microsoft-license-provisioning-audit",
     [string]$OutputFolder = "out",
     [string]$TempFolder = "out/tmp"
 )

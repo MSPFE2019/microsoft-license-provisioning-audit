@@ -39,5 +39,5 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: m365-license-notification-solution
+          name: microsoft-license-provisioning-audit-solution
           path: out/*.zip
