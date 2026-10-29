@@ -128,9 +128,9 @@ Use these files directly for import:
    - `cr3f6_LicenseSnapshot`
    - `cr3f6_ProvisioningEvent`
    - `cr3f6_DetectionCheckpoint`
-2. Confirm roles exist:
-   - `cr3f6_LicenseAuditReader`
-   - `cr3f6_LicenseAuditService`
+2. Create the two security roles manually (role privilege XML is environment-dependent, so it is **not** packaged in the solution zip — only JSON specs are provided as a reference):
+   - `cr3f6_LicenseAuditReader` — read-only on the three tables above. Spec: `src/solutions/microsoft-license-provisioning-audit/securityroles/cr3f6_LicenseAuditReader.role.json`
+   - `cr3f6_LicenseAuditService` — read/write/create (no delete) on the three tables above, for the flows' connection identity. Spec: `src/solutions/microsoft-license-provisioning-audit/securityroles/cr3f6_LicenseAuditService.role.json`
 
 ### 4) Enable flows in the right order
 
@@ -174,3 +174,5 @@ Use these files directly for import:
 - Existing legacy flow (80% consumption alert) remains in the solution source.
 - `cr3f6_Secret` exists as an environment variable; production should use Key Vault-backed secret handling.
 - Sovereign cloud routing is supported through `GraphBaseUrl` and `AuthorityUrl` variables, but tenant validation is still required.
+- Security roles are **not** imported with the solution zip (Dataverse role privilege XML is environment-dependent). Create them manually in the target environment from the JSON specs in `securityroles/`.
+- Alternate keys are not used on `cr3f6_ProvisioningEvent`/`cr3f6_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
