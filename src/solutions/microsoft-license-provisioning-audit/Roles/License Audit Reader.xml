@@ -2,8 +2,8 @@
 <Role id="{82a40552-2e56-44b9-b3f3-68f6fb59d7f1}" name="License Audit Reader" isinherited="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <IsCustomizable>1</IsCustomizable>
   <RolePrivileges>
-    <RolePrivilege name="prvReadcr3f6_DetectionCheckpoint" level="Global" />
-    <RolePrivilege name="prvReadcr3f6_LicenseSnapshot" level="Global" />
-    <RolePrivilege name="prvReadcr3f6_ProvisioningEvent" level="Global" />
+    <RolePrivilege name="prvReadmlpa_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvReadmlpa_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvReadmlpa_ProvisioningEvent" level="Global" />
   </RolePrivileges>
 </Role>

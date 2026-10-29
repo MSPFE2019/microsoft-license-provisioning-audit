@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_ClientID">
+<environmentvariabledefinition schemaname="mlpa_ClientID">
   <description default="M365 License ClientID">
     <label description="M365 License ClientID" languagecode="1033" />
   </description>

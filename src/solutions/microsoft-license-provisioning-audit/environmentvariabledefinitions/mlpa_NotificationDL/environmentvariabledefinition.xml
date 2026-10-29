@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_NotificationDL">
+<environmentvariabledefinition schemaname="mlpa_NotificationDL">
   <description default="Distribution list email address for provisioning notifications">
     <label description="Distribution list email address for provisioning notifications" languagecode="1033" />
   </description>

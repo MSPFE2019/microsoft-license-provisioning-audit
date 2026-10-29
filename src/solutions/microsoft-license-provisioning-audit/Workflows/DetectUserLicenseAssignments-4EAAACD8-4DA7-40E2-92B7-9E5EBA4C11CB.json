@@ -4,7 +4,7 @@
       "shared_commondataserviceforapps_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Dataverse"
         },
         "api": {
           "name": "shared_commondataserviceforapps"
@@ -23,46 +23,46 @@
           "defaultValue": {},
           "type": "SecureObject"
         },
-        "TenantID (cr3f6_TenantID)": {
+        "TenantID (mlpa_TenantID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_TenantID"
+            "schemaName": "mlpa_TenantID"
           }
         },
-        "ClientID (cr3f6_ClientID)": {
+        "ClientID (mlpa_ClientID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_ClientID"
+            "schemaName": "mlpa_ClientID"
           }
         },
-        "Secret (cr3f6_Secret)": {
+        "Secret (mlpa_Secret)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_Secret"
+            "schemaName": "mlpa_Secret"
           }
         },
-        "GraphBaseUrl (cr3f6_GraphBaseUrl)": {
+        "GraphBaseUrl (mlpa_GraphBaseUrl)": {
           "defaultValue": "https://graph.microsoft.com",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_GraphBaseUrl"
+            "schemaName": "mlpa_GraphBaseUrl"
           }
         },
-        "AuthorityUrl (cr3f6_AuthorityUrl)": {
+        "AuthorityUrl (mlpa_AuthorityUrl)": {
           "defaultValue": "https://login.microsoftonline.com",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_AuthorityUrl"
+            "schemaName": "mlpa_AuthorityUrl"
           }
         },
-        "PollOverlapMinutes (cr3f6_PollOverlapMinutes)": {
+        "PollOverlapMinutes (mlpa_PollOverlapMinutes)": {
           "defaultValue": 30,
           "type": "Int",
           "metadata": {
-            "schemaName": "cr3f6_PollOverlapMinutes"
+            "schemaName": "mlpa_PollOverlapMinutes"
           }
         }
       },
@@ -86,8 +86,8 @@
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
             },
             "parameters": {
-              "entityName": "cr3f6_detectioncheckpoints",
-              "$filter": "cr3f6_name eq 'UserAudit'"
+              "entityName": "mlpa_detectioncheckpoints",
+              "$filter": "mlpa_name eq 'UserAudit'"
             },
             "authentication": "@parameters('$authentication')"
           }
@@ -104,7 +104,7 @@
               {
                 "name": "varWatermark",
                 "type": "string",
-                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),first(body('List_UserAudit_Checkpoint')?['value'])?['cr3f6_lastprocessedutc'],utcNow())"
+                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),first(body('List_UserAudit_Checkpoint')?['value'])?['mlpa_lastprocessedutc'],utcNow())"
               }
             ]
           }
@@ -121,7 +121,7 @@
               {
                 "name": "varWatermarkWithOverlap",
                 "type": "string",
-                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),addMinutes(variables('varWatermark'),mul(-1,int(parameters('PollOverlapMinutes (cr3f6_PollOverlapMinutes)')))),variables('varWatermark'))"
+                "value": "@if(greater(length(body('List_UserAudit_Checkpoint')?['value']),0),addMinutes(variables('varWatermark'),mul(-1,int(parameters('PollOverlapMinutes (mlpa_PollOverlapMinutes)')))),variables('varWatermark'))"
               }
             ]
           }
@@ -135,14 +135,14 @@
           "type": "Http",
           "inputs": {
             "method": "GET",
-            "uri": "@{parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')}/v1.0/auditLogs/directoryAudits?$filter=activityDisplayName eq 'Change user license' and activityDateTime ge @{variables('varWatermarkWithOverlap')}&$orderby=activityDateTime asc",
+            "uri": "@{parameters('GraphBaseUrl (mlpa_GraphBaseUrl)')}/v1.0/auditLogs/directoryAudits?$filter=activityDisplayName eq 'Change user license' and activityDateTime ge @{variables('varWatermarkWithOverlap')}&$orderby=activityDateTime asc",
             "authentication": {
               "type": "ActiveDirectoryOAuth",
-              "authority": "@parameters('AuthorityUrl (cr3f6_AuthorityUrl)')",
-              "tenant": "@parameters('TenantID (cr3f6_TenantID)')",
-              "audience": "@parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')",
-              "clientId": "@parameters('ClientID (cr3f6_ClientID)')",
-              "secret": "@parameters('Secret (cr3f6_Secret)')"
+              "authority": "@parameters('AuthorityUrl (mlpa_AuthorityUrl)')",
+              "tenant": "@parameters('TenantID (mlpa_TenantID)')",
+              "audience": "@parameters('GraphBaseUrl (mlpa_GraphBaseUrl)')",
+              "clientId": "@parameters('ClientID (mlpa_ClientID)')",
+              "secret": "@parameters('Secret (mlpa_Secret)')"
             }
           }
         },
@@ -201,8 +201,8 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                 },
                 "parameters": {
-                  "entityName": "cr3f6_provisioningevents",
-                  "$filter": "cr3f6_sourceid eq '@{items('For_Each_Audit')?['id']}'"
+                  "entityName": "mlpa_provisioningevents",
+                  "$filter": "mlpa_sourceid eq '@{items('For_Each_Audit')?['id']}'"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -231,17 +231,17 @@
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                     },
                     "parameters": {
-                      "entityName": "cr3f6_provisioningevents",
+                      "entityName": "mlpa_provisioningevents",
                       "item": {
-                        "cr3f6_name": "User license assignment @ @{items('For_Each_Audit')?['activityDateTime']}",
-                        "cr3f6_sourceid": "@{items('For_Each_Audit')?['id']}",
-                        "cr3f6_eventtype": 631230003,
-                        "cr3f6_targetuserupn": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['userPrincipalName'],'')}",
-                        "cr3f6_targetuserid": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['id'],'')}",
-                        "cr3f6_initiatedby": "@{coalesce(items('For_Each_Audit')?['initiatedBy']?['user']?['userPrincipalName'],items('For_Each_Audit')?['initiatedBy']?['app']?['displayName'],'system')}",
-                        "cr3f6_eventtimeutc": "@{items('For_Each_Audit')?['activityDateTime']}",
-                        "cr3f6_detectedon": "@utcNow()",
-                        "cr3f6_notificationstatus": 631230011
+                        "mlpa_name": "User license assignment @ @{items('For_Each_Audit')?['activityDateTime']}",
+                        "mlpa_sourceid": "@{items('For_Each_Audit')?['id']}",
+                        "mlpa_eventtype": 205410003,
+                        "mlpa_targetuserupn": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['userPrincipalName'],'')}",
+                        "mlpa_targetuserid": "@{coalesce(first(items('For_Each_Audit')?['targetResources'])?['id'],'')}",
+                        "mlpa_initiatedby": "@{coalesce(items('For_Each_Audit')?['initiatedBy']?['user']?['userPrincipalName'],items('For_Each_Audit')?['initiatedBy']?['app']?['displayName'],'system')}",
+                        "mlpa_eventtimeutc": "@{items('For_Each_Audit')?['activityDateTime']}",
+                        "mlpa_detectedon": "@utcNow()",
+                        "mlpa_notificationstatus": 205410011
                       }
                     },
                     "authentication": "@parameters('$authentication')"
@@ -278,11 +278,11 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                 },
                 "parameters": {
-                  "entityName": "cr3f6_detectioncheckpoints",
-                  "recordId": "@first(body('List_UserAudit_Checkpoint')?['value'])?['cr3f6_detectioncheckpointid']",
+                  "entityName": "mlpa_detectioncheckpoints",
+                  "recordId": "@first(body('List_UserAudit_Checkpoint')?['value'])?['mlpa_detectioncheckpointid']",
                   "item": {
-                    "cr3f6_lastprocessedutc": "@utcNow()",
-                    "cr3f6_lastrunstatus": 631230022
+                    "mlpa_lastprocessedutc": "@utcNow()",
+                    "mlpa_lastrunstatus": 205410022
                   }
                 },
                 "authentication": "@parameters('$authentication')"
@@ -301,11 +301,11 @@
                     "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                   },
                   "parameters": {
-                    "entityName": "cr3f6_detectioncheckpoints",
+                    "entityName": "mlpa_detectioncheckpoints",
                     "item": {
-                      "cr3f6_name": "UserAudit",
-                      "cr3f6_lastprocessedutc": "@utcNow()",
-                      "cr3f6_lastrunstatus": 631230022
+                      "mlpa_name": "UserAudit",
+                      "mlpa_lastprocessedutc": "@utcNow()",
+                      "mlpa_lastrunstatus": 205410022
                     }
                   },
                   "authentication": "@parameters('$authentication')"

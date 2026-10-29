@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_AuthorityUrl">
+<environmentvariabledefinition schemaname="mlpa_AuthorityUrl">
   <description default="Microsoft Entra authority base URL">
     <label description="Microsoft Entra authority base URL" languagecode="1033" />
   </description>

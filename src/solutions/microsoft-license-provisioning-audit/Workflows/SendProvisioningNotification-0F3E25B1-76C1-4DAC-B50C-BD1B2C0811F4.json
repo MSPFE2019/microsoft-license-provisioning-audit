@@ -4,7 +4,7 @@
       "shared_commondataserviceforapps_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Dataverse"
         },
         "api": {
           "name": "shared_commondataserviceforapps"
@@ -13,7 +13,7 @@
       "shared_office365_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Outlook"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Outlook"
         },
         "api": {
           "name": "shared_office365"
@@ -22,7 +22,7 @@
       "shared_teams_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Teams"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Teams"
         },
         "api": {
           "name": "shared_teams"
@@ -41,25 +41,25 @@
           "defaultValue": {},
           "type": "SecureObject"
         },
-        "NotificationDL (cr3f6_NotificationDL)": {
+        "NotificationDL (mlpa_NotificationDL)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_NotificationDL"
+            "schemaName": "mlpa_NotificationDL"
           }
         },
-        "MaxRetries (cr3f6_MaxRetries)": {
+        "MaxRetries (mlpa_MaxRetries)": {
           "defaultValue": 3,
           "type": "Int",
           "metadata": {
-            "schemaName": "cr3f6_MaxRetries"
+            "schemaName": "mlpa_MaxRetries"
           }
         },
-        "EnableTeamsNotification (cr3f6_EnableTeamsNotification)": {
+        "EnableTeamsNotification (mlpa_EnableTeamsNotification)": {
           "defaultValue": false,
           "type": "Bool",
           "metadata": {
-            "schemaName": "cr3f6_EnableTeamsNotification"
+            "schemaName": "mlpa_EnableTeamsNotification"
           }
         }
       },
@@ -83,8 +83,8 @@
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
             },
             "parameters": {
-              "entityName": "cr3f6_provisioningevents",
-              "$filter": "(cr3f6_notificationstatus eq 631230011) or (cr3f6_notificationstatus eq 631230013 and cr3f6_retrycount lt @{int(parameters('MaxRetries (cr3f6_MaxRetries)'))})"
+              "entityName": "mlpa_provisioningevents",
+              "$filter": "(mlpa_notificationstatus eq 205410011) or (mlpa_notificationstatus eq 205410013 and mlpa_retrycount lt @{int(parameters('MaxRetries (mlpa_MaxRetries)'))})"
             },
             "authentication": "@parameters('$authentication')"
           }
@@ -106,7 +106,7 @@
             "Compose_EmailBody": {
               "runAfter": {},
               "type": "Compose",
-              "inputs": "<p>Provisioning events detected:</p><p>Total events in this digest: @{length(body('List_PendingOrRetryable_Events')?['value'])}</p><p>This digest is grouped by run. Review Dataverse table cr3f6_ProvisioningEvent for full audit details.</p>"
+              "inputs": "<p>Provisioning events detected:</p><p>Total events in this digest: @{length(body('List_PendingOrRetryable_Events')?['value'])}</p><p>This digest is grouped by run. Review Dataverse table mlpa_ProvisioningEvent for full audit details.</p>"
             },
             "Send_Digest_Email": {
               "runAfter": {
@@ -122,7 +122,7 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
                 },
                 "parameters": {
-                  "emailMessage/To": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
+                  "emailMessage/To": "@parameters('NotificationDL (mlpa_NotificationDL)')",
                   "emailMessage/Subject": "M365 License Provisioning Digest - @{utcNow()}",
                   "emailMessage/Body": "@outputs('Compose_EmailBody')",
                   "emailMessage/Importance": "Normal"
@@ -139,7 +139,7 @@
               "type": "If",
               "expression": {
                 "equals": [
-                  "@parameters('EnableTeamsNotification (cr3f6_EnableTeamsNotification)')",
+                  "@parameters('EnableTeamsNotification (mlpa_EnableTeamsNotification)')",
                   true
                 ]
               },
@@ -156,7 +156,7 @@
                     "parameters": {
                       "poster": "Flow bot",
                       "location": "Chat with Flow bot",
-                      "body/recipient": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
+                      "body/recipient": "@parameters('NotificationDL (mlpa_NotificationDL)')",
                       "body/messageBody": "<p>M365 License Provisioning digest email sent. Event count: @{length(body('List_PendingOrRetryable_Events')?['value'])}</p>"
                     },
                     "authentication": "@parameters('$authentication')"
@@ -186,14 +186,14 @@
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                     },
                     "parameters": {
-                      "entityName": "cr3f6_provisioningevents",
-                      "recordId": "@items('For_Each_Event_Mark_Sent')?['cr3f6_provisioningeventid']",
+                      "entityName": "mlpa_provisioningevents",
+                      "recordId": "@items('For_Each_Event_Mark_Sent')?['mlpa_provisioningeventid']",
                       "item": {
-                        "cr3f6_notificationstatus": 631230012,
-                        "cr3f6_notificationchannel": "Email Digest",
-                        "cr3f6_notificationrecipient": "@parameters('NotificationDL (cr3f6_NotificationDL)')",
-                        "cr3f6_notificationsenton": "@utcNow()",
-                        "cr3f6_flowrunurl": "@{workflow()?['run']?['name']}"
+                        "mlpa_notificationstatus": 205410012,
+                        "mlpa_notificationchannel": "Email Digest",
+                        "mlpa_notificationrecipient": "@parameters('NotificationDL (mlpa_NotificationDL)')",
+                        "mlpa_notificationsenton": "@utcNow()",
+                        "mlpa_flowrunurl": "@{workflow()?['run']?['name']}"
                       }
                     },
                     "authentication": "@parameters('$authentication')"

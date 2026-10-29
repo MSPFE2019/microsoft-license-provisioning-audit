@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_TenantID">
+<environmentvariabledefinition schemaname="mlpa_TenantID">
   <description default="M365 License Tenant ID ">
     <label description="M365 License Tenant ID " languagecode="1033" />
   </description>

@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_EnableTeamsNotification">
+<environmentvariabledefinition schemaname="mlpa_EnableTeamsNotification">
   <description default="Enable optional Teams post when digest email is sent (true/false)">
     <label description="Enable optional Teams post when digest email is sent (true/false)" languagecode="1033" />
   </description>

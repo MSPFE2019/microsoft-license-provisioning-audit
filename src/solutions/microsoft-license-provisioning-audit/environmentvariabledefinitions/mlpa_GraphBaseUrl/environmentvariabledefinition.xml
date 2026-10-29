@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_GraphBaseUrl">
+<environmentvariabledefinition schemaname="mlpa_GraphBaseUrl">
   <description default="Microsoft Graph base URL">
     <label description="Microsoft Graph base URL" languagecode="1033" />
   </description>

@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_MaxRetries">
+<environmentvariabledefinition schemaname="mlpa_MaxRetries">
   <description default="Maximum retries for failed notification events">
     <label description="Maximum retries for failed notification events" languagecode="1033" />
   </description>

@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_Secret">
+<environmentvariabledefinition schemaname="mlpa_Secret">
   <description default="Secret M365 License">
     <label description="Secret M365 License" languagecode="1033" />
   </description>

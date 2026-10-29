@@ -4,7 +4,7 @@
       "shared_office365groups_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_OfficeGroup"
+          "connectionReferenceLogicalName": "mlpa_M365LN_OfficeGroup"
         },
         "api": {
           "name": "shared_office365groups"
@@ -13,7 +13,7 @@
       "shared_teams_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Teams"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Teams"
         },
         "api": {
           "name": "shared_teams"
@@ -32,35 +32,35 @@
           "defaultValue": {},
           "type": "SecureObject"
         },
-        "TenantID (cr3f6_TenantID)": {
+        "TenantID (mlpa_TenantID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_TenantID",
+            "schemaName": "mlpa_TenantID",
             "description": "M365 License Tenant ID "
           }
         },
-        "ClientID (cr3f6_ClientID)": {
+        "ClientID (mlpa_ClientID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_ClientID",
+            "schemaName": "mlpa_ClientID",
             "description": "M365 License ClientID"
           }
         },
-        "Secret (cr3f6_Secret)": {
+        "Secret (mlpa_Secret)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_Secret",
+            "schemaName": "mlpa_Secret",
             "description": "Secret M365 License"
           }
         },
-        "M365 GroupID (cr3f6_M365GroupID)": {
+        "M365 GroupID (mlpa_M365GroupID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_M365GroupID",
+            "schemaName": "mlpa_M365GroupID",
             "description": "M365 GroupID - M365 License"
           }
         }
@@ -381,7 +381,7 @@
               {
                 "name": "varTenantID",
                 "type": "string",
-                "value": "@parameters('TenantID (cr3f6_TenantID)')"
+                "value": "@parameters('TenantID (mlpa_TenantID)')"
               }
             ]
           }
@@ -439,7 +439,7 @@
               {
                 "name": "varClientID",
                 "type": "string",
-                "value": "@parameters('ClientID (cr3f6_ClientID)')"
+                "value": "@parameters('ClientID (mlpa_ClientID)')"
               }
             ]
           }
@@ -459,7 +459,7 @@
               {
                 "name": "varSecret",
                 "type": "string",
-                "value": "@parameters('Secret (cr3f6_Secret)')"
+                "value": "@parameters('Secret (mlpa_Secret)')"
               }
             ]
           }
@@ -479,7 +479,7 @@
               {
                 "name": "varOfficeGroupID",
                 "type": "string",
-                "value": "@parameters('M365 GroupID (cr3f6_M365GroupID)')"
+                "value": "@parameters('M365 GroupID (mlpa_M365GroupID)')"
               }
             ]
           }

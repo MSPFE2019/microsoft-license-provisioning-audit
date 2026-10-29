@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_PollOverlapMinutes">
+<environmentvariabledefinition schemaname="mlpa_PollOverlapMinutes">
   <description default="Overlap window in minutes for audit polling dedupe">
     <label description="Overlap window in minutes for audit polling dedupe" languagecode="1033" />
   </description>

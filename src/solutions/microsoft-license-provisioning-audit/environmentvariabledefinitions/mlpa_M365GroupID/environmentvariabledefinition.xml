@@ -1,4 +1,4 @@
-<environmentvariabledefinition schemaname="cr3f6_M365GroupID">
+<environmentvariabledefinition schemaname="mlpa_M365GroupID">
   <description default="M365 GroupID - M365 License">
     <label description="M365 GroupID - M365 License" languagecode="1033" />
   </description>

@@ -90,8 +90,8 @@ Outputs:
 
 Use these files directly for import:
 
-- `solution-packages/microsoft-license-provisioning-audit_1_1_2_0_unmanaged.zip` (dev/customization)
-- `solution-packages/microsoft-license-provisioning-audit_1_1_2_0_managed.zip` (test/prod)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_3_0_unmanaged.zip` (dev/customization)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_3_0_managed.zip` (test/prod)
 
 ## Step-by-step: create the flows in Power Platform
 
@@ -109,26 +109,26 @@ Use these files directly for import:
 ### 2) Import the solution
 
 1. Go to **Power Apps -> Solutions -> Import solution**.
-2. Import `microsoft-license-provisioning-audit_1_1_2_0_unmanaged.zip` in development.
+2. Import `microsoft-license-provisioning-audit_1_1_3_0_unmanaged.zip` in development.
 3. During import, bind connection references to your environment connections.
 4. Set environment variable values:
-   - `cr3f6_TenantID`
-   - `cr3f6_ClientID`
-   - `cr3f6_Secret`
-   - `cr3f6_NotificationDL`
-   - `cr3f6_PollOverlapMinutes` (default `30`)
-   - `cr3f6_MaxRetries` (default `3`)
-   - `cr3f6_EnableTeamsNotification` (`No` by default)
-   - `cr3f6_GraphBaseUrl` (`https://graph.microsoft.com`)
-   - `cr3f6_AuthorityUrl` (`https://login.microsoftonline.com`)
-   - `cr3f6_M365GroupID` (used by the legacy utilization flow)
+   - `mlpa_TenantID`
+   - `mlpa_ClientID`
+   - `mlpa_Secret`
+   - `mlpa_NotificationDL`
+   - `mlpa_PollOverlapMinutes` (default `30`)
+   - `mlpa_MaxRetries` (default `3`)
+   - `mlpa_EnableTeamsNotification` (`No` by default)
+   - `mlpa_GraphBaseUrl` (`https://graph.microsoft.com`)
+   - `mlpa_AuthorityUrl` (`https://login.microsoftonline.com`)
+   - `mlpa_M365GroupID` (used by the legacy utilization flow)
 
 ### 3) Verify Dataverse components
 
 1. Confirm tables exist:
-   - `cr3f6_LicenseSnapshot`
-   - `cr3f6_ProvisioningEvent`
-   - `cr3f6_DetectionCheckpoint`
+   - `mlpa_LicenseSnapshot`
+   - `mlpa_ProvisioningEvent`
+   - `mlpa_DetectionCheckpoint`
 2. Confirm the two security roles exist (imported automatically as solution components — no manual setup needed):
    - `License Audit Reader` — read-only on the three tables above.
    - `License Audit Service` — read/append/create/write (no delete) on the three tables above; assign this to the connection identity the flows run as.
@@ -158,16 +158,16 @@ Use these files directly for import:
 
 1. Add a small number of licenses to the tenant (or assign a test license to a user).
 2. Wait for detector schedules to run.
-3. Confirm new rows in `cr3f6_ProvisioningEvent`.
+3. Confirm new rows in `mlpa_ProvisioningEvent`.
 4. Confirm digest email delivery to the distribution list.
 5. Confirm each event has updated notification fields (`NotificationStatus`, `NotificationSentOn`, `RetryCount`, `FlowRunUrl`).
 
 ## Operational notes
 
 - Existing legacy flow (80% consumption alert) remains in the solution source.
-- `cr3f6_Secret` exists as an environment variable; production should use Key Vault-backed secret handling.
+- `mlpa_Secret` exists as an environment variable; production should use Key Vault-backed secret handling.
 - Sovereign cloud routing is supported through `GraphBaseUrl` and `AuthorityUrl` variables, but tenant validation is still required.
-- Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadcr3f6_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
-- Alternate keys are not used on `cr3f6_ProvisioningEvent`/`cr3f6_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
-- **Publisher**: the solution ships its own publisher, `License Provisioning Audit` (unique name `MLPAPublisher`), instead of relying on the target environment's auto-generated default publisher. It keeps the original `cr3f6` customization prefix so no entity/field/flow references needed renaming.
+- Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadmlpa_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
+- Alternate keys are not used on `mlpa_ProvisioningEvent`/`mlpa_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
+- **Publisher**: the solution ships its own publisher, `License Provisioning Audit` (unique name `MLPAPublisher`), instead of relying on the target environment's auto-generated default publisher. It also uses its own customization prefix (`mlpa`, option value prefix `20541`) instead of reusing `cr3f6` from the environment's default publisher, so there is no risk of a "customization prefix already in use" conflict on import. Every component (tables, fields, choices, flows, roles, connection references, environment variables) was renamed to the `mlpa_` prefix.
 - **Fixed import failure (v1.1.2.0)**: earlier versions used `microsoft-license-provisioning-audit` as the solution's internal `UniqueName`, which Dataverse rejects — unique names may only contain `[A-Z]`, `[a-z]`, `[0-9]`, `_` (no hyphens). The internal unique name is now `MicrosoftLicenseProvisioningAudit`; the display name shown in Power Apps is unchanged (`microsoft-license-provisioning-audit`).

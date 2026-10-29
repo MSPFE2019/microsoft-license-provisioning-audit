@@ -4,7 +4,7 @@
       "shared_commondataserviceforapps_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cr3f6_M365LN_Dataverse"
+          "connectionReferenceLogicalName": "mlpa_M365LN_Dataverse"
         },
         "api": {
           "name": "shared_commondataserviceforapps"
@@ -23,39 +23,39 @@
           "defaultValue": {},
           "type": "SecureObject"
         },
-        "TenantID (cr3f6_TenantID)": {
+        "TenantID (mlpa_TenantID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_TenantID"
+            "schemaName": "mlpa_TenantID"
           }
         },
-        "ClientID (cr3f6_ClientID)": {
+        "ClientID (mlpa_ClientID)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_ClientID"
+            "schemaName": "mlpa_ClientID"
           }
         },
-        "Secret (cr3f6_Secret)": {
+        "Secret (mlpa_Secret)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_Secret"
+            "schemaName": "mlpa_Secret"
           }
         },
-        "GraphBaseUrl (cr3f6_GraphBaseUrl)": {
+        "GraphBaseUrl (mlpa_GraphBaseUrl)": {
           "defaultValue": "https://graph.microsoft.com",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_GraphBaseUrl"
+            "schemaName": "mlpa_GraphBaseUrl"
           }
         },
-        "AuthorityUrl (cr3f6_AuthorityUrl)": {
+        "AuthorityUrl (mlpa_AuthorityUrl)": {
           "defaultValue": "https://login.microsoftonline.com",
           "type": "String",
           "metadata": {
-            "schemaName": "cr3f6_AuthorityUrl"
+            "schemaName": "mlpa_AuthorityUrl"
           }
         }
       },
@@ -79,8 +79,8 @@
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
             },
             "parameters": {
-              "entityName": "cr3f6_detectioncheckpoints",
-              "$filter": "cr3f6_name eq 'TenantBaselineSeeded'"
+              "entityName": "mlpa_detectioncheckpoints",
+              "$filter": "mlpa_name eq 'TenantBaselineSeeded'"
             },
             "authentication": "@parameters('$authentication')"
           }
@@ -111,14 +111,14 @@
           "type": "Http",
           "inputs": {
             "method": "GET",
-            "uri": "@{parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')}/v1.0/subscribedSkus",
+            "uri": "@{parameters('GraphBaseUrl (mlpa_GraphBaseUrl)')}/v1.0/subscribedSkus",
             "authentication": {
               "type": "ActiveDirectoryOAuth",
-              "authority": "@parameters('AuthorityUrl (cr3f6_AuthorityUrl)')",
-              "tenant": "@parameters('TenantID (cr3f6_TenantID)')",
-              "audience": "@parameters('GraphBaseUrl (cr3f6_GraphBaseUrl)')",
-              "clientId": "@parameters('ClientID (cr3f6_ClientID)')",
-              "secret": "@parameters('Secret (cr3f6_Secret)')"
+              "authority": "@parameters('AuthorityUrl (mlpa_AuthorityUrl)')",
+              "tenant": "@parameters('TenantID (mlpa_TenantID)')",
+              "audience": "@parameters('GraphBaseUrl (mlpa_GraphBaseUrl)')",
+              "clientId": "@parameters('ClientID (mlpa_ClientID)')",
+              "secret": "@parameters('Secret (mlpa_Secret)')"
             }
           }
         },
@@ -188,8 +188,8 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                 },
                 "parameters": {
-                  "entityName": "cr3f6_licensesnapshots",
-                  "$filter": "cr3f6_skuid eq '@{items('For_Each_SKU')?['skuId']}'"
+                  "entityName": "mlpa_licensesnapshots",
+                  "$filter": "mlpa_skuid eq '@{items('For_Each_SKU')?['skuId']}'"
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -214,7 +214,7 @@
                   "expression": {
                     "greater": [
                       "@int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])",
-                      "@int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits'])"
+                      "@int(first(body('List_Snapshot_BySkuId')?['value'])?['mlpa_enabledunits'])"
                     ]
                   },
                   "actions": {
@@ -228,19 +228,19 @@
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                         },
                         "parameters": {
-                          "entityName": "cr3f6_provisioningevents",
+                          "entityName": "mlpa_provisioningevents",
                           "item": {
-                            "cr3f6_name": "@{items('For_Each_SKU')?['skuPartNumber']} increase @ @{utcNow()}",
-                            "cr3f6_sourceid": "@{items('For_Each_SKU')?['skuId']}-@{items('For_Each_SKU')?['prepaidUnits']?['enabled']}-@{ticks(utcNow())}",
-                            "cr3f6_eventtype": 631230001,
-                            "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
-                            "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                            "cr3f6_previousunits": "@{int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits'])}",
-                            "cr3f6_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
-                            "cr3f6_delta": "@{sub(int(items('For_Each_SKU')?['prepaidUnits']?['enabled']),int(first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_enabledunits']))}",
-                            "cr3f6_eventtimeutc": "@utcNow()",
-                            "cr3f6_detectedon": "@utcNow()",
-                            "cr3f6_notificationstatus": 631230011
+                            "mlpa_name": "@{items('For_Each_SKU')?['skuPartNumber']} increase @ @{utcNow()}",
+                            "mlpa_sourceid": "@{items('For_Each_SKU')?['skuId']}-@{items('For_Each_SKU')?['prepaidUnits']?['enabled']}-@{ticks(utcNow())}",
+                            "mlpa_eventtype": 205410001,
+                            "mlpa_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                            "mlpa_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                            "mlpa_previousunits": "@{int(first(body('List_Snapshot_BySkuId')?['value'])?['mlpa_enabledunits'])}",
+                            "mlpa_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                            "mlpa_delta": "@{sub(int(items('For_Each_SKU')?['prepaidUnits']?['enabled']),int(first(body('List_Snapshot_BySkuId')?['value'])?['mlpa_enabledunits']))}",
+                            "mlpa_eventtimeutc": "@utcNow()",
+                            "mlpa_detectedon": "@utcNow()",
+                            "mlpa_notificationstatus": 205410011
                           }
                         },
                         "authentication": "@parameters('$authentication')"
@@ -265,16 +265,16 @@
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                     },
                     "parameters": {
-                      "entityName": "cr3f6_licensesnapshots",
-                      "recordId": "@first(body('List_Snapshot_BySkuId')?['value'])?['cr3f6_licensesnapshotid']",
+                      "entityName": "mlpa_licensesnapshots",
+                      "recordId": "@first(body('List_Snapshot_BySkuId')?['value'])?['mlpa_licensesnapshotid']",
                       "item": {
-                        "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                        "cr3f6_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                        "cr3f6_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
-                        "cr3f6_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
-                        "cr3f6_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
-                        "cr3f6_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
-                        "cr3f6_lastcheckedon": "@utcNow()"
+                        "mlpa_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                        "mlpa_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                        "mlpa_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                        "mlpa_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
+                        "mlpa_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
+                        "mlpa_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
+                        "mlpa_lastcheckedon": "@utcNow()"
                       }
                     },
                     "authentication": "@parameters('$authentication')"
@@ -303,19 +303,19 @@
                             "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                           },
                           "parameters": {
-                            "entityName": "cr3f6_provisioningevents",
+                            "entityName": "mlpa_provisioningevents",
                             "item": {
-                              "cr3f6_name": "@{items('For_Each_SKU')?['skuPartNumber']} new SKU @ @{utcNow()}",
-                              "cr3f6_sourceid": "@{items('For_Each_SKU')?['skuId']}-new-@{ticks(utcNow())}",
-                              "cr3f6_eventtype": 631230002,
-                              "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
-                              "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                              "cr3f6_previousunits": 0,
-                              "cr3f6_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
-                              "cr3f6_delta": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
-                              "cr3f6_eventtimeutc": "@utcNow()",
-                              "cr3f6_detectedon": "@utcNow()",
-                              "cr3f6_notificationstatus": 631230011
+                              "mlpa_name": "@{items('For_Each_SKU')?['skuPartNumber']} new SKU @ @{utcNow()}",
+                              "mlpa_sourceid": "@{items('For_Each_SKU')?['skuId']}-new-@{ticks(utcNow())}",
+                              "mlpa_eventtype": 205410002,
+                              "mlpa_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                              "mlpa_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                              "mlpa_previousunits": 0,
+                              "mlpa_newunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                              "mlpa_delta": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                              "mlpa_eventtimeutc": "@utcNow()",
+                              "mlpa_detectedon": "@utcNow()",
+                              "mlpa_notificationstatus": 205410011
                             }
                           },
                           "authentication": "@parameters('$authentication')"
@@ -340,16 +340,16 @@
                         "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                       },
                       "parameters": {
-                        "entityName": "cr3f6_licensesnapshots",
+                        "entityName": "mlpa_licensesnapshots",
                         "item": {
-                          "cr3f6_skuid": "@{items('For_Each_SKU')?['skuId']}",
-                          "cr3f6_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                          "cr3f6_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
-                          "cr3f6_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
-                          "cr3f6_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
-                          "cr3f6_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
-                          "cr3f6_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
-                          "cr3f6_lastcheckedon": "@utcNow()"
+                          "mlpa_skuid": "@{items('For_Each_SKU')?['skuId']}",
+                          "mlpa_skupartnumber": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                          "mlpa_friendlyname": "@{items('For_Each_SKU')?['skuPartNumber']}",
+                          "mlpa_enabledunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['enabled'])}",
+                          "mlpa_suspendedunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['suspended'])}",
+                          "mlpa_warningunits": "@{int(items('For_Each_SKU')?['prepaidUnits']?['warning'])}",
+                          "mlpa_consumedunits": "@{int(items('For_Each_SKU')?['consumedUnits'])}",
+                          "mlpa_lastcheckedon": "@utcNow()"
                         }
                       },
                       "authentication": "@parameters('$authentication')"
@@ -384,11 +384,11 @@
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                 },
                 "parameters": {
-                  "entityName": "cr3f6_detectioncheckpoints",
+                  "entityName": "mlpa_detectioncheckpoints",
                   "item": {
-                    "cr3f6_name": "TenantBaselineSeeded",
-                    "cr3f6_lastrunstatus": 631230022,
-                    "cr3f6_lastprocessedutc": "@utcNow()"
+                    "mlpa_name": "TenantBaselineSeeded",
+                    "mlpa_lastrunstatus": 205410022,
+                    "mlpa_lastprocessedutc": "@utcNow()"
                   }
                 },
                 "authentication": "@parameters('$authentication')"

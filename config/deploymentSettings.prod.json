@@ -1,61 +1,61 @@
 {
   "EnvironmentVariables": [
     {
-      "SchemaName": "cr3f6_TenantID",
+      "SchemaName": "mlpa_TenantID",
       "Value": ""
     },
     {
-      "SchemaName": "cr3f6_ClientID",
+      "SchemaName": "mlpa_ClientID",
       "Value": ""
     },
     {
-      "SchemaName": "cr3f6_Secret",
+      "SchemaName": "mlpa_Secret",
       "Value": ""
     },
     {
-      "SchemaName": "cr3f6_M365GroupID",
+      "SchemaName": "mlpa_M365GroupID",
       "Value": ""
     },
     {
-      "SchemaName": "cr3f6_NotificationDL",
+      "SchemaName": "mlpa_NotificationDL",
       "Value": ""
     },
     {
-      "SchemaName": "cr3f6_PollOverlapMinutes",
+      "SchemaName": "mlpa_PollOverlapMinutes",
       "Value": "30"
     },
     {
-      "SchemaName": "cr3f6_MaxRetries",
+      "SchemaName": "mlpa_MaxRetries",
       "Value": "3"
     },
     {
-      "SchemaName": "cr3f6_EnableTeamsNotification",
+      "SchemaName": "mlpa_EnableTeamsNotification",
       "Value": "false"
     },
     {
-      "SchemaName": "cr3f6_GraphBaseUrl",
+      "SchemaName": "mlpa_GraphBaseUrl",
       "Value": "https://graph.microsoft.com"
     },
     {
-      "SchemaName": "cr3f6_AuthorityUrl",
+      "SchemaName": "mlpa_AuthorityUrl",
       "Value": "https://login.microsoftonline.com"
     }
   ],
   "ConnectionReferences": [
     {
-      "LogicalName": "cr3f6_M365LN_Dataverse",
+      "LogicalName": "mlpa_M365LN_Dataverse",
       "ConnectionId": ""
     },
     {
-      "LogicalName": "cr3f6_M365LN_Outlook",
+      "LogicalName": "mlpa_M365LN_Outlook",
       "ConnectionId": ""
     },
     {
-      "LogicalName": "cr3f6_M365LN_Teams",
+      "LogicalName": "mlpa_M365LN_Teams",
       "ConnectionId": ""
     },
     {
-      "LogicalName": "cr3f6_M365LN_OfficeGroup",
+      "LogicalName": "mlpa_M365LN_OfficeGroup",
       "ConnectionId": ""
     }
   ]
