@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Role id="{78bb0d82-c9a9-4a0e-8432-f8e62868cd8d}" name="License Audit Service" isinherited="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <IsCustomizable>1</IsCustomizable>
+  <RolePrivileges>
+    <RolePrivilege name="prvAppendcr3f6_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvAppendcr3f6_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvAppendcr3f6_ProvisioningEvent" level="Global" />
+    <RolePrivilege name="prvAppendTocr3f6_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvAppendTocr3f6_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvAppendTocr3f6_ProvisioningEvent" level="Global" />
+    <RolePrivilege name="prvCreatecr3f6_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvCreatecr3f6_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvCreatecr3f6_ProvisioningEvent" level="Global" />
+    <RolePrivilege name="prvReadcr3f6_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvReadcr3f6_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvReadcr3f6_ProvisioningEvent" level="Global" />
+    <RolePrivilege name="prvWritecr3f6_DetectionCheckpoint" level="Global" />
+    <RolePrivilege name="prvWritecr3f6_LicenseSnapshot" level="Global" />
+    <RolePrivilege name="prvWritecr3f6_ProvisioningEvent" level="Global" />
+  </RolePrivileges>
+</Role>

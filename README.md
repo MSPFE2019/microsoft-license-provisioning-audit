@@ -10,6 +10,7 @@ The solution detects provisioning activity and keeps an auditable notification h
 2. User-level license assignment detection (`directoryAudits` with overlap + dedupe)
 3. Grouped digest notifications with retry tracking
 4. Dataverse audit trail (`LicenseSnapshot`, `ProvisioningEvent`, `DetectionCheckpoint`)
+5. Least-privilege security roles (`License Audit Reader`, `License Audit Service`) packaged as real solution components
 
 ## ALM implementation in this repo
 
@@ -89,8 +90,8 @@ Outputs:
 
 Use these files directly for import:
 
-- `solution-packages/microsoft-license-provisioning-audit_1_1_0_0_unmanaged.zip` (dev/customization)
-- `solution-packages/microsoft-license-provisioning-audit_1_1_0_0_managed.zip` (test/prod)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_1_0_unmanaged.zip` (dev/customization)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_1_0_managed.zip` (test/prod)
 
 ## Step-by-step: create the flows in Power Platform
 
@@ -108,7 +109,7 @@ Use these files directly for import:
 ### 2) Import the solution
 
 1. Go to **Power Apps -> Solutions -> Import solution**.
-2. Import `microsoft-license-provisioning-audit_1_1_0_0_unmanaged.zip` in development.
+2. Import `microsoft-license-provisioning-audit_1_1_1_0_unmanaged.zip` in development.
 3. During import, bind connection references to your environment connections.
 4. Set environment variable values:
    - `cr3f6_TenantID`
@@ -128,9 +129,10 @@ Use these files directly for import:
    - `cr3f6_LicenseSnapshot`
    - `cr3f6_ProvisioningEvent`
    - `cr3f6_DetectionCheckpoint`
-2. Create the two security roles manually (role privilege XML is environment-dependent, so it is **not** packaged in the solution zip — only JSON specs are provided as a reference):
-   - `cr3f6_LicenseAuditReader` — read-only on the three tables above. Spec: `src/solutions/microsoft-license-provisioning-audit/securityroles/cr3f6_LicenseAuditReader.role.json`
-   - `cr3f6_LicenseAuditService` — read/write/create (no delete) on the three tables above, for the flows' connection identity. Spec: `src/solutions/microsoft-license-provisioning-audit/securityroles/cr3f6_LicenseAuditService.role.json`
+2. Confirm the two security roles exist (imported automatically as solution components — no manual setup needed):
+   - `License Audit Reader` — read-only on the three tables above.
+   - `License Audit Service` — read/append/create/write (no delete) on the three tables above; assign this to the connection identity the flows run as.
+3. Assign `License Audit Service` to the user/service account whose connection reference the flows use, and `License Audit Reader` to anyone who needs read access to the audit trail.
 
 ### 4) Enable flows in the right order
 
@@ -165,5 +167,5 @@ Use these files directly for import:
 - Existing legacy flow (80% consumption alert) remains in the solution source.
 - `cr3f6_Secret` exists as an environment variable; production should use Key Vault-backed secret handling.
 - Sovereign cloud routing is supported through `GraphBaseUrl` and `AuthorityUrl` variables, but tenant validation is still required.
-- Security roles are **not** imported with the solution zip (Dataverse role privilege XML is environment-dependent). Create them manually in the target environment from the JSON specs in `securityroles/`.
+- Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadcr3f6_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
 - Alternate keys are not used on `cr3f6_ProvisioningEvent`/`cr3f6_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.

@@ -6,7 +6,7 @@
       <LocalizedName description="microsoft-license-provisioning-audit" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>1.1.0.0</Version>
+    <Version>1.1.1.0</Version>
     <Managed>0</Managed>
     <Publisher>
       <UniqueName>Cr8d10a</UniqueName>
@@ -85,6 +85,8 @@
       <RootComponent type="1" schemaName="cr3f6_LicenseSnapshot" behavior="0" />
       <RootComponent type="1" schemaName="cr3f6_ProvisioningEvent" behavior="0" />
       <RootComponent type="1" schemaName="cr3f6_DetectionCheckpoint" behavior="0" />
+      <RootComponent type="20" id="{82a40552-2e56-44b9-b3f3-68f6fb59d7f1}" behavior="0" />
+      <RootComponent type="20" id="{78bb0d82-c9a9-4a0e-8432-f8e62868cd8d}" behavior="0" />
     </RootComponents>
     <MissingDependencies />
   </SolutionManifest>
