@@ -1,4 +1,4 @@
-# Microsoft License Provisioning Audit - ALM-Ready Power Platform Solution
+# Microsoft License Provisioning Audit
 
 This repository is structured for **Power Platform ALM best practices**: source-controlled solution components, repeatable build, automated validation, and managed deployment by environment.
 
@@ -159,15 +159,6 @@ Use these files directly for import:
 3. Confirm new rows in `cr3f6_ProvisioningEvent`.
 4. Confirm digest email delivery to the distribution list.
 5. Confirm each event has updated notification fields (`NotificationStatus`, `NotificationSentOn`, `RetryCount`, `FlowRunUrl`).
-
-## ALM best practices applied
-
-1. **Managed-to-upstream promotion**: deploy managed in test/prod.
-2. **Configuration externalization**: values supplied per environment via deployment settings.
-3. **Service principal automation**: no interactive auth in CI/CD.
-4. **Repeatable builds**: deterministic pack from source.
-5. **Environment isolation**: separate deployment profiles and approvals.
-6. **Auditability**: event rows include detection + notification lifecycle fields.
 
 ## Operational notes
 
