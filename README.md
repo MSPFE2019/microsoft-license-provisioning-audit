@@ -90,8 +90,8 @@ Outputs:
 
 Use these files directly for import:
 
-- `solution-packages/microsoft-license-provisioning-audit_1_1_3_0_unmanaged.zip` (dev/customization)
-- `solution-packages/microsoft-license-provisioning-audit_1_1_3_0_managed.zip` (test/prod)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_4_0_unmanaged.zip` (dev/customization)
+- `solution-packages/microsoft-license-provisioning-audit_1_1_4_0_managed.zip` (test/prod)
 
 ## Step-by-step: create the flows in Power Platform
 
@@ -109,7 +109,7 @@ Use these files directly for import:
 ### 2) Import the solution
 
 1. Go to **Power Apps -> Solutions -> Import solution**.
-2. Import `microsoft-license-provisioning-audit_1_1_3_0_unmanaged.zip` in development.
+2. Import `microsoft-license-provisioning-audit_1_1_4_0_unmanaged.zip` in development.
 3. During import, bind connection references to your environment connections.
 4. Set environment variable values:
    - `mlpa_TenantID`
@@ -170,4 +170,11 @@ Use these files directly for import:
 - Security roles (`License Audit Reader`, `License Audit Service`) are real solution components (`src/solutions/microsoft-license-provisioning-audit/Roles/`) packaged with deterministic, name-based privileges (e.g. `prvReadmlpa_ProvisioningEvent`) scoped to the three audit tables — Dataverse resolves these by name on import, so no environment-specific GUIDs are required. Schema verified against a real Microsoft-shipped solution (CoE Starter Kit); not yet import-tested end-to-end in a live tenant.
 - Alternate keys are not used on `mlpa_ProvisioningEvent`/`mlpa_LicenseSnapshot`; duplicate avoidance relies on check-before-create logic in the flows plus serialized runs.
 - **Publisher**: the solution ships its own publisher, `License Provisioning Audit` (unique name `MLPAPublisher`), instead of relying on the target environment's auto-generated default publisher. It also uses its own customization prefix (`mlpa`, option value prefix `20541`) instead of reusing `cr3f6` from the environment's default publisher, so there is no risk of a "customization prefix already in use" conflict on import. Every component (tables, fields, choices, flows, roles, connection references, environment variables) was renamed to the `mlpa_` prefix.
-- **Fixed import failure (v1.1.2.0)**: earlier versions used `microsoft-license-provisioning-audit` as the solution's internal `UniqueName`, which Dataverse rejects — unique names may only contain `[A-Z]`, `[a-z]`, `[0-9]`, `_` (no hyphens). The internal unique name is now `MicrosoftLicenseProvisioningAudit`; the display name shown in Power Apps is unchanged (`microsoft-license-provisioning-audit`).
+
+### Import fix history
+
+Each of these was found from an actual failed-import log and confirmed fixed by re-inspecting the packed zip (not just the source), since there is no live tenant available in this environment to test against directly:
+
+- **v1.1.2.0** — Solution `UniqueName` was `microsoft-license-provisioning-audit`, which Dataverse rejects: unique names may only contain `[A-Z]`, `[a-z]`, `[0-9]`, `_` (no hyphens). Changed to `MicrosoftLicenseProvisioningAudit`; the display name shown in Power Apps is unchanged.
+- **v1.1.3.0** — Solution shipped the environment's auto-generated default publisher (`Cr8d10a` / "CDS Default Publisher") and its `cr3f6` prefix, risking a "customization prefix already in use" conflict. Replaced with a dedicated publisher (`MLPAPublisher`) and prefix (`mlpa`) across every component.
+- **v1.1.4.0** — All three tables used `<OwnershipTypeMask>OrganizationOwned</OwnershipTypeMask>`, which Dataverse rejected with `Requested value 'OrganizationOwned' was not found` (the real enum member is `OrgOwned`, and in practice that value is only used by special Business-Process-Flow entities in real Microsoft solutions). Changed all three tables to `UserOwned` — the standard choice for custom tables — which is functionally equivalent here since both security roles already grant `Global` (organization-wide) privilege depth, so access isn't limited to record owners.

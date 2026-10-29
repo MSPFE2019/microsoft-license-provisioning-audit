@@ -44,7 +44,7 @@
       <IsOfflineInMobileClient>0</IsOfflineInMobileClient>
       <IsQuickCreateEnabled>0</IsQuickCreateEnabled>
       <IsInteractionCentricEnabled>0</IsInteractionCentricEnabled>
-      <OwnershipTypeMask>OrganizationOwned</OwnershipTypeMask>
+      <OwnershipTypeMask>UserOwned</OwnershipTypeMask>
       <IntroducedVersion>1.1.0.0</IntroducedVersion>
       <IsEnabledForCharts>1</IsEnabledForCharts>
       <IsEnabledForTrace>0</IsEnabledForTrace>
